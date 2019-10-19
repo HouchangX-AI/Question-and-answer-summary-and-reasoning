@@ -4,8 +4,29 @@ from seq2seq_tf2.seq2seq_model import Encoder, Decoder, BahdanauAttention
 import tensorflow as tf
 from seq2seq_tf2 import config
 
+from seq2seq_tf2.seq2seq_model import PGN
+from seq2seq_tf2.batcher import batcher
 
-def train(src_vocab_size='', target_vocab_size='', embedding_dim='', hidden_dim='', batch_sz='',
+
+def train(params):
+	assert params["mode"].lower() == "train", "change training mode to 'train'"
+
+	tf.compat.v1.logging.info("Building the model ...")
+	model = PGN(params)
+
+    tf.compat.v1.logging.info("Creating the batcher ...")
+    b = batcher(params["data_dir"], params["vocab_path"], params)
+
+    tf.compat.v1.logging.info("Creating the checkpoint manager")
+	logdir = "{}/logdir".format(params["model_dir"])
+	checkpoint_dir = "{}/checkpoint".format(params["model_dir"])
+	ckpt = tf.train.Checkpoint(step=tf.Variable(0), PGN=model)
+	ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir, max_to_keep=11)
+
+pass
+
+
+def _train(src_vocab_size='', target_vocab_size='', embedding_dim='', hidden_dim='', batch_sz='',
           learning_rate='', log_dir='', train_path='', dataset_size='', epochs='',
           steps_per_epoch='', checkpoint_path=''):
     encoder = Encoder(vocab_size=src_vocab_size,
