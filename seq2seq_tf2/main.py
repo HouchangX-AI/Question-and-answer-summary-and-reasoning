@@ -3,6 +3,7 @@ import argparse
 import os
 from seq2seq_tf2.train import train
 from seq2seq_tf2.utils import define_logger
+from seq2seq_tf2 import config
 
 
 def main():
@@ -21,13 +22,17 @@ def main():
     parser.add_argument("--checkpoints_save_steps", default=10000, help="Save checkpoints every N steps", type=int)
     parser.add_argument("--mode", help="training, eval or test options")
     parser.add_argument("--model_dir", help="Model folder")
-    parser.add_argument("--data_dir",  help="Data Folder")
+    parser.add_argument("--data_dir_1",  help="Data Folder")
+    parser.add_argument("--data_dir_2", help="Data Folder")
     parser.add_argument("--vocab_path", help="Vocab path")
     parser.add_argument("--log_file", help="File in which to redirect console outputs", default="", type=str)
 
     args = parser.parse_args()
     params = vars(args)
     params["mode"] = "train"
+    params["data_dir_1"] = config.train_seg_path_x
+    params["data_dir_2"] = config.train_seg_path_y
+    params["vocab_path"] = config.vocab_path
     print(params)
 
     assert params["mode"], "mode is required. train, test or eval option"

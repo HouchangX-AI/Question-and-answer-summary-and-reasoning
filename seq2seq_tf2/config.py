@@ -5,15 +5,6 @@ import pathlib
 # pwd_path = os.path.abspath(os.path.dirname(__file__))
 pwd_path = pathlib.Path(os.path.abspath(__file__)).parent.parent
 
-# Training data path.
-# chinese corpus
-raw_train_paths = [
-    # os.path.join(pwd_path, '../data/cn/CGED/CGED18_HSK_TrainingSet.xml'),
-    # os.path.join(pwd_path, '../data/cn/CGED/CGED17_HSK_TrainingSet.xml'),
-    # os.path.join(pwd_path, '../data/cn/CGED/CGED16_HSK_TrainingSet.xml'),
-    os.path.join(pwd_path, '../data/cn/CGED/sample_HSK_TrainingSet.xml'),
-]
-
 output_dir = os.path.join(pwd_path, 'datasets')
 # Training data path.
 train_path = os.path.join(output_dir, 'AutoMaster_TrainSet.csv')
@@ -35,7 +26,9 @@ maxlen = 400
 dropout = 0.0
 gpu_id = 0
 # segment of train file
-train_seg_path = os.path.join(output_dir, 'train_set.seg.txt')
+train_seg_path_x = os.path.join(output_dir, 'train_set.seg_x.txt')
+train_seg_path_y = os.path.join(output_dir, 'train_set.seg_y.txt')
+
 # segment of test file
 test_seg_path = os.path.join(output_dir, 'test_set.seg.csv')
 
@@ -57,4 +50,6 @@ dataset_size = 100
 epochs = 10
 steps_per_epoch = dataset_size // batch_sz
 checkpoint_path = "./checkpoints/lstm"
+
+vocab_path = os.path.join(output_dir, 'vocab.txt')
 

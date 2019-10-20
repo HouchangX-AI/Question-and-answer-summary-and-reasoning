@@ -36,6 +36,7 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
 
     try:
         for batch in dataset:
+            print("batch is {}".format(batch))
             t0 = time.time()
             loss = train_step(batch[0]["enc_input"], batch[0]["extended_enc_input"], batch[1]["dec_input"],
                               batch[1]["dec_target"], batch[0]["max_oov_len"])

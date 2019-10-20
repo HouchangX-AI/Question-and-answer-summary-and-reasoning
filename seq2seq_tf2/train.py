@@ -16,7 +16,7 @@ def train(params):
     model = PGN(params)
 
     tf.compat.v1.logging.info("Creating the batcher ...")
-    b = batcher(params["data_dir"], params["vocab_path"], params)
+    b = batcher(params["data_dir_1"], params["data_dir_2"], params["vocab_path"], params)
 
     tf.compat.v1.logging.info("Creating the checkpoint manager")
     logdir = "{}/logdir".format(params["model_dir"])
@@ -114,15 +114,17 @@ def _train(src_vocab_size='', target_vocab_size='', embedding_dim='', hidden_dim
 
 
 if __name__ == '__main__':
-    _train(src_vocab_size=config.src_vocab_size,
-          target_vocab_size=config.target_vocab_size,
-          embedding_dim=config.embedding_dim,
-          hidden_dim=config.hidden_dim,
-          batch_sz=config.batch_sz,
-          learning_rate=config.learning_rate,
-          log_dir=config.log_dir,
-          train_path=config.train_seg_path,
-          dataset_size=config.dataset_size,
-          epochs=config.epochs,
-          steps_per_epoch=config.steps_per_epoch,
-          checkpoint_path=config.checkpoint_path)
+    pass
+
+    # _train(src_vocab_size=config.src_vocab_size,
+    #       target_vocab_size=config.target_vocab_size,
+    #       embedding_dim=config.embedding_dim,
+    #       hidden_dim=config.hidden_dim,
+    #       batch_sz=config.batch_sz,
+    #       learning_rate=config.learning_rate,
+    #       log_dir=config.log_dir,
+    #       train_path=config.train_seg_path,
+    #       dataset_size=config.dataset_size,
+    #       epochs=config.epochs,
+    #       steps_per_epoch=config.steps_per_epoch,
+    #       checkpoint_path=config.checkpoint_path)
