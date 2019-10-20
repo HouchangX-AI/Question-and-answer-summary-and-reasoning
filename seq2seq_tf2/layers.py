@@ -64,7 +64,7 @@ class Decoder(tf.keras.layers.Layer):
                                        return_state=True,
                                        recurrent_initializer='glorot_uniform')
         self.fc = tf.keras.layers.Dense(vocab_size, activation=tf.keras.activations.softmax)
-        self.fc = tf.nn.dropout(0.5)
+        # self.fc = tf.nn.dropout(0.5)
 
     def call(self, x, hidden, enc_output, context_vector):
         # enc_output shape == (batch_size, max_length, hidden_size)
