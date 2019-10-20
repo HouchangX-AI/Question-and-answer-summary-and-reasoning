@@ -19,11 +19,14 @@ class Vocab:
 
         with open(vocab_file, 'r') as f:
             for line in f:
+                # print('line is {}'.format(line))
                 pieces = line.split()
-                if len(pieces) != 2:
-                    print('Warning : incorrectly formatted line in vocabulary file : %s\n' % line)
-                    continue
+                # print('pieces is {}'.format(pieces))
+                # if len(pieces) != 2:
+                #     print('Warning : incorrectly formatted line in vocabulary file : %s\n' % line)
+                #     continue
 
+                # w = pieces[0]
                 w = pieces[0]
                 if w in [SENTENCE_START, SENTENCE_END, UNKNOWN_TOKEN, PAD_TOKEN, START_DECODING, STOP_DECODING]:
                     raise Exception(r'<s>, </s>, [UNK], [PAD], [START] and [STOP] shouldn\'t be in the vocab file, but %s is' % w)
@@ -156,19 +159,27 @@ def _parse_function(example_proto):
 
 def example_generator(filenames_1, filenames_2, vocab_path, vocab_size, max_enc_len, max_dec_len, mode):
     dataset_1 = tf.data.TextLineDataset(filenames_1)
+    print('dataset_1 is {}'.format(dataset_1))
     dataset_2 = tf.data.TextLineDataset(filenames_2)
     train_dataset = tf.data.Dataset.zip((dataset_1, dataset_2))
+    print('train_dataset is {}'.format(train_dataset))
 
+    # for i in train_dataset:
+    #     print(i)
     # parsed_dataset = raw_dataset.map(_parse_function)
     if mode == "train":
-        parsed_dataset = train_dataset.shuffle(1000, reshuffle_each_iteration=True).repeat()
+        train_dataset = train_dataset.shuffle(10, reshuffle_each_iteration=True).repeat()
 
     vocab = Vocab(vocab_path, vocab_size)
+    print('vocab is {}'.format(vocab.word2id))
 
-    for raw_record in parsed_dataset:
-        print(raw_record)
-        article = raw_record["article"].numpy().decode()
-        abstract = raw_record["abstract"].numpy().decode()
+    for raw_record in train_dataset:
+        # article = raw_record["article"].numpy().decode()
+        article = raw_record[0]
+        print('article is {}'.format(article))
+        # abstract = raw_record["abstract"].numpy().decode()
+        abstract = raw_record[1]
+        print('abstract is {}'.format(abstract))
 
         start_decoding = vocab.word_to_id(START_DECODING)
         stop_decoding = vocab.word_to_id(STOP_DECODING)
@@ -203,7 +214,7 @@ def example_generator(filenames_1, filenames_2, vocab_path, vocab_size, max_enc_
 
 
 def batch_generator(generator, filenames_1, filenames_2, vocab_path, vocab_size, max_enc_len, max_dec_len, batch_size, mode):
-
+    print('generator is {}'.format(generator))
     dataset = tf.data.Dataset.from_generator(generator,
                                              args=[filenames_1, filenames_2, vocab_path, vocab_size, max_enc_len, max_dec_len, mode],
                                              output_types={
@@ -275,7 +286,7 @@ def batcher(filenames_1, filenames_2, vocab_path, hpm):
     # filenames = glob.glob("{}/*.tfrecords".format(data_path))
     dataset = batch_generator(example_generator, filenames_1, filenames_2, vocab_path, hpm["vocab_size"], hpm["max_enc_len"],
                               hpm["max_dec_len"], hpm["batch_size"], hpm["mode"])
-
+    print('dataset is {}'.format(dataset))
     return dataset
 
 
