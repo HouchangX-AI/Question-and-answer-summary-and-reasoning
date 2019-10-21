@@ -28,13 +28,13 @@ gpu_id = 0
 # segment of train file
 train_seg_path_x = os.path.join(output_dir, 'train_set.seg_x.txt')
 train_seg_path_y = os.path.join(output_dir, 'train_set.seg_y.txt')
-
+test_seg_path_x = os.path.join(output_dir, 'test_set.seg_x.txt')
 # segment of test file
 test_seg_path = os.path.join(output_dir, 'test_set.seg.csv')
 
 stop_words_path = os.path.join(output_dir, 'stop_words.txt')
-
-
+sentence_path = os.path.join(output_dir, 'sentences.txt')
+word2vec_output = os.path.join(output_dir, 'word2vec.txt')
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 

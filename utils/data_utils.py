@@ -4,7 +4,8 @@ import pickle
 import os
 from collections import Counter
 import jieba
-from paddle_model.reader import read_data
+# from seq2seq_tf2.data_reader import read_data
+from seq2seq_tf2 import config
 
 
 PAD_TOKEN = 'PAD'
@@ -55,6 +56,7 @@ def stat_dict(lines):
                 word_dict[t] = word_dict.get(t, 0) + 1
     return word_dict
 
+
 def filter_dict(word_dict, min_count=3):
     out_dict = copy.deepcopy(word_dict)
     for w,c in out_dict.items():
@@ -73,41 +75,17 @@ def filter_dict(word_dict, min_count=3):
 #     return vocab, reverse_vocab
 
 
-def build_vocab(items, sort=True, min_count=0, lower=False):
-    """
-    构建词典列表
-    :param items: list  [item1, item2, ... ]
-    :param sort: 是否按频率排序，否则按items排序
-    :param min_count: 词典最小频次
-    :param lower: 是否小写
-    :return: list: word set
-    """
-    result = []
-    if sort:
-        # sort by count
-        dic = defaultdict(int)
-        for item in items:
-            for i in item.split(" "):
-                i = i if not lower else item.lower()
-                dic[i] += 1
-        # sort
-        dic = sorted(dic.items(), key=lambda d: d[1], reverse=True)
-        for i, item in enumerate(dic):
-            key = item[0]
-            if min_count and min_count > item[1]:
-                continue
-            result.append(key)
-    else:
-        # sort by items
-        for i, item in enumerate(items):
-            item = item if not lower else item.lower()
-            result.append(item)
-
-    result = [GO_TOKEN, EOS_TOKEN, UNK_TOKEN] + result
-    vocab = dict([(w, i) for i, w in enumerate(result)])
-    reverse_vocab = dict([(i, w) for i, w in enumerate(result)])
-
-    return vocab, reverse_vocab
+def read_lines(path, col_sep=None):
+    lines = []
+    with open(path, mode='r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if col_sep:
+                if col_sep in line:
+                    lines.append(line)
+            else:
+                lines.append(line)
+    return lines
 
 
 def load_dict(dict_path):
@@ -280,3 +258,4 @@ def save(pred_labels, ture_labels=None, pred_save_path=None, data_set=None):
                     else:
                         f.write(pred_labels[i] + '\n')
         print("pred_save_path:", pred_save_path)
+
