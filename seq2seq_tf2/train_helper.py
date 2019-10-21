@@ -29,6 +29,7 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
             enc_hidden, enc_output = model.call_encoder(enc_inp)
             predictions, _ = model(enc_output, enc_hidden, enc_inp, enc_extended_inp, dec_inp, batch_oov_len)
             loss = loss_function(dec_tar, predictions)
+
         variables = model.encoder.trainable_variables + model.attention.trainable_variables + model.decoder.trainable_variables + model.pointer.trainable_variables
         gradients = tape.gradient(loss, variables)
         optimizer.apply_gradients(zip(gradients, variables))
@@ -36,7 +37,7 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
 
     try:
         for batch in dataset:
-            print("batch is {}".format(batch))
+            # print("batch is {}".format(batch))
             t0 = time.time()
             loss = train_step(batch[0]["enc_input"], batch[0]["extended_enc_input"], batch[1]["dec_input"],
                               batch[1]["dec_target"], batch[0]["max_oov_len"])
