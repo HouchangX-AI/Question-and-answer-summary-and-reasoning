@@ -17,22 +17,13 @@ def read_stopwords(path):
 
 
 def parse_data(path):
-    pd_data = pd.read_csv(path, encoding='utf-8')
-    np_data = np.array(pd_data)
-    # data_list = np_data.tolist()[:100]
-    data_list = np_data.tolist()
 
-    results_1 = []
-    results_2 = []
-    for i in data_list:
-        if len(i) == 6:
-            results_1.append(i[3] + " " + i[4])
-            results_2.append(i[5])
-
-        if len(i) == 5:
-            results_1.append(i[3] + " " + i[4])
-
-    return results_1, results_2
+    df = pd.read_csv(path, encoding='utf-8')
+    data_x = df.Question.str.cat(df.Dialogue)
+    data_y = []
+    if 'Report' in df.columns:
+        data_y = df.Report
+    return data_x, data_y
 
 
 def save_data(data_1, data_2, data_3, data_path_1, data_path_2, data_path_3, stop_words_path=''):
