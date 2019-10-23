@@ -1,6 +1,6 @@
 import tensorflow as tf
 from seq2seq_tf2.layers import Encoder, BahdanauAttention, Decoder, Pointer
-from seq2seq_tf2.utils import _calc_final_dist
+from utils.log_utils import _calc_final_dist
 
 
 class PGN(tf.keras.Model):

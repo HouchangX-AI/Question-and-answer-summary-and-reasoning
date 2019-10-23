@@ -2,7 +2,7 @@ import tensorflow as tf
 import argparse
 import os
 from seq2seq_tf2.train import train
-from seq2seq_tf2.utils import define_logger
+from utils.log_utils import define_logger
 from seq2seq_tf2 import config
 
 
