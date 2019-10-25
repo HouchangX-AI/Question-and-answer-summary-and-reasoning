@@ -140,6 +140,8 @@ def build_vocab(items, sort=True, min_count=0, lower=False):
         dic = defaultdict(int)
         for item in items:
             for i in item.split(" "):
+                i = i.strip()
+                if not i: continue
                 i = i if not lower else item.lower()
                 dic[i] += 1
         # sort
@@ -155,9 +157,8 @@ def build_vocab(items, sort=True, min_count=0, lower=False):
             item = item if not lower else item.lower()
             result.append(item)
 
-    result = [w.strip() for w in result if w.strip()]
-    vocab = [(w.strip(), i) for i, w in enumerate(result)]
-    reverse_vocab = [(i, w.strip()) for i, w in enumerate(result)]
+    vocab = [(w, i) for i, w in enumerate(result)]
+    reverse_vocab = [(i, w) for i, w in enumerate(result)]
 
     return vocab, reverse_vocab
 
