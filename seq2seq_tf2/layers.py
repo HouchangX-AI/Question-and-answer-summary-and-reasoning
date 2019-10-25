@@ -1,4 +1,6 @@
 import tensorflow as tf
+from seq2seq_tf2 import config
+from utils.data_utils import load_word2vec
 
 
 class Encoder(tf.keras.layers.Layer):
@@ -6,7 +8,11 @@ class Encoder(tf.keras.layers.Layer):
         super(Encoder, self).__init__()
         self.batch_sz = batch_sz
         self.enc_units = enc_units
-        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
+        embedding_matrix = load_word2vec(vocab_size)
+        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
+                                                   embeddings_initializer=tf.keras.initializers.Constant(embedding_matrix),
+                                                   input_length=config.maxlen,
+                                                   trainable=False)
         self.gru = tf.keras.layers.GRU(self.enc_units,
                                        return_sequences=True,
                                        return_state=True,
@@ -98,3 +104,9 @@ class Pointer(tf.keras.layers.Layer):
 
     def call(self, context_vector, state, dec_inp):
         return tf.nn.sigmoid(self.w_s_reduce(state) + self.w_c_reduce(context_vector) + self.w_i_reduce(dec_inp))
+
+
+if __name__ == '__main__':
+    from utils.data_utils import load_pkl
+    word2vec = load_pkl('../datasets/word2vec.txt')
+    print(word2vec)

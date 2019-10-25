@@ -259,3 +259,22 @@ def save(pred_labels, ture_labels=None, pred_save_path=None, data_set=None):
                         f.write(pred_labels[i] + '\n')
         print("pred_save_path:", pred_save_path)
 
+
+def load_word2vec(vocab_size):
+    """
+    load pretrain word2vec weight matrix
+    :param vocab_size:
+    :return:
+    """
+    word2vec_dict = load_pkl(config.word2vec_output)
+    vocab_dict = open(config.vocab_path).readlines()
+    embedding_matrix = np.zeros((vocab_size, config.embedding_dim))
+
+    for line in vocab_dict[:vocab_size]:
+        word_id = line.split()
+        word, i = word_id
+        embedding_vector = word2vec_dict.get(word)
+        if embedding_vector is not None:
+            embedding_matrix[int(i)] = embedding_vector
+
+    return embedding_matrix
