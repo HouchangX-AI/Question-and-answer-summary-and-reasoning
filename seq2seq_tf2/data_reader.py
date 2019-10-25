@@ -17,10 +17,11 @@ from seq2seq_tf2 import config
 #     return dict_data
 #
 #
-def save_word_dict(dict_data, save_path):
+def save_word_dict(vocab, save_path):
     with open(save_path, 'w', encoding='utf-8') as f:
-        for k, v in dict_data.items():
-            f.write("%s\t%d\n" % (k, v))
+        for line in vocab:
+            w, i = line
+            f.write("%s\t%d\n" % (w, i))
 #
 #
 # def read_samples_by_string(path):
@@ -154,8 +155,8 @@ def build_vocab(items, sort=True, min_count=0, lower=False):
             item = item if not lower else item.lower()
             result.append(item)
 
-    vocab = dict([(w, i) for i, w in enumerate(result)])
-    reverse_vocab = dict([(i, w) for i, w in enumerate(result)])
+    vocab = [(w.strip(), i) for i, w in enumerate(result)]
+    reverse_vocab = [(i, w.strip()) for i, w in enumerate(result)]
 
     return vocab, reverse_vocab
 
