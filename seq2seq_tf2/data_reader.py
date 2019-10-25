@@ -155,6 +155,7 @@ def build_vocab(items, sort=True, min_count=0, lower=False):
             item = item if not lower else item.lower()
             result.append(item)
 
+    result = [w.strip() for w in result if w.strip()]
     vocab = [(w.strip(), i) for i, w in enumerate(result)]
     reverse_vocab = [(i, w.strip()) for i, w in enumerate(result)]
 
