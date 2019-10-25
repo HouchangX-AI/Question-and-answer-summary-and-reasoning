@@ -17,7 +17,6 @@ def read_stopwords(path):
 
 
 def parse_data(path):
-
     df = pd.read_csv(path, encoding='utf-8')
     data_x = df.Question.str.cat(df.Dialogue)
     data_y = []
@@ -28,9 +27,7 @@ def parse_data(path):
 
 def save_data(data_1, data_2, data_3, data_path_1, data_path_2, data_path_3, stop_words_path=''):
     stopwords = read_stopwords(stop_words_path)
-    with open(data_path_1, 'w', encoding='utf-8') as f1,\
-            open(data_path_2, 'w', encoding='utf-8') as f2,\
-            open(data_path_3, 'w', encoding='utf-8') as f3:
+    with open(data_path_1, 'w', encoding='utf-8') as f1:
         count = 0
         for line in data_1:
             # print(line)
@@ -46,6 +43,7 @@ def save_data(data_1, data_2, data_3, data_path_1, data_path_2, data_path_3, sto
             count += 1
             f1.write('\n')
 
+    with open(data_path_2, 'w', encoding='utf-8') as f2:
         for line in data_2:
             if isinstance(line, str):
                 seg_list = segment(line.strip(), cut_type='word')
@@ -58,6 +56,7 @@ def save_data(data_1, data_2, data_3, data_path_1, data_path_2, data_path_3, sto
                 f2.write('%s' % seg_line)
             f2.write('\n')
 
+    with open(data_path_3, 'w', encoding='utf-8') as f3:
         for line in data_3:
             if isinstance(line, str):
                 seg_list = segment(line.strip(), cut_type='word')
