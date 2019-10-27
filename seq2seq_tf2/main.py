@@ -1,6 +1,7 @@
 import tensorflow as tf
 import argparse
 import os
+import pathlib
 from seq2seq_tf2.train import train
 from utils.log_utils import define_logger
 from seq2seq_tf2 import config
@@ -20,19 +21,24 @@ def main():
     parser.add_argument("--adagrad_init_acc", default=0.1, help="Adagrad optimizer initial accumulator value. Please refer to the Adagrad optimizer API documentation on tensorflow site for more details.", type=float)
     parser.add_argument("--max_grad_norm", default=0.8, help="Gradient norm above which gradients must be clipped", type=float)
     parser.add_argument("--checkpoints_save_steps", default=10, help="Save checkpoints every N steps", type=int)
-    parser.add_argument("--mode", help="training, eval or test options")
+    parser.add_argument("--mode", default='train', help="training, eval or test options")
+    parser.add_argument("--pointer_gen", default=False, help="training, eval or test options")
+
+    pwd_path = pathlib.Path(os.path.abspath(__file__)).parent.parent
+    output_dir = os.path.join(pwd_path, 'datasets')
+    train_seg_path_x = os.path.join(output_dir, 'train_set.seg_x.txt')
+    train_seg_path_y = os.path.join(output_dir, 'train_set.seg_y.txt')
+    test_seg_path_x = os.path.join(output_dir, 'test_set.seg_x.txt')
+    vocab_path = os.path.join(output_dir, 'vocab.txt')
+
     parser.add_argument("--model_dir", default='./ckpt', help="Model folder")
-    parser.add_argument("--data_dir_1",  help="Data Folder")
-    parser.add_argument("--data_dir_2", help="Data Folder")
-    parser.add_argument("--vocab_path", help="Vocab path")
+    parser.add_argument("--train_seg_x_dir", default=train_seg_path_x, help="train_seg_x_dir")
+    parser.add_argument("--train_seg_y_dir", default=train_seg_path_y, help="train_seg_y_dir")
+    parser.add_argument("--vocab_path", default=vocab_path, help="Vocab path")
     parser.add_argument("--log_file", help="File in which to redirect console outputs", default="", type=str)
 
     args = parser.parse_args()
     params = vars(args)
-    params["mode"] = "train"
-    params["data_dir_1"] = config.train_seg_path_x
-    params["data_dir_2"] = config.train_seg_path_y
-    params["vocab_path"] = config.vocab_path
     print(params)
 
     assert params["mode"], "mode is required. train, test or eval option"

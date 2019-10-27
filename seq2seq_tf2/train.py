@@ -1,5 +1,5 @@
 import os
-from seq2seq_tf2.data_reader import build_dataset, build_test_dataset, load_word_dict, read_vocab, save_word_dict, load_dataset
+# from seq2seq_tf2.data_reader import build_dataset, build_test_dataset, load_word_dict, read_vocab, save_word_dict, load_dataset
 from seq2seq_tf2.seq2seq_model import Encoder, Decoder, BahdanauAttention
 import tensorflow as tf
 from seq2seq_tf2 import config
@@ -16,7 +16,7 @@ def train(params):
     model = PGN(params)
 
     tf.compat.v1.logging.info("Creating the batcher ...")
-    b = batcher(params["data_dir_1"], params["data_dir_2"], params["vocab_path"], params)
+    b = batcher(params["train_seg_x_dir"], params["train_seg_y_dir"], params["vocab_path"], params)
 
     tf.compat.v1.logging.info("Creating the checkpoint manager")
     logdir = "{}/logdir".format(params["model_dir"])
