@@ -3,6 +3,7 @@ import argparse
 import os
 import pathlib
 from seq2seq_tf2.train import train
+from seq2seq_tf2.test import test
 from utils.log_utils import define_logger
 from seq2seq_tf2 import config
 
@@ -21,7 +22,7 @@ def main():
     parser.add_argument("--adagrad_init_acc", default=0.1, help="Adagrad optimizer initial accumulator value. Please refer to the Adagrad optimizer API documentation on tensorflow site for more details.", type=float)
     parser.add_argument("--max_grad_norm", default=0.8, help="Gradient norm above which gradients must be clipped", type=float)
     parser.add_argument("--checkpoints_save_steps", default=10, help="Save checkpoints every N steps", type=int)
-    parser.add_argument("--mode", default='train', help="training, eval or test options")
+    parser.add_argument("--mode", default='test', help="training, eval or test options")
     parser.add_argument("--pointer_gen", default=False, help="training, eval or test options")
 
     pwd_path = pathlib.Path(os.path.abspath(__file__)).parent.parent
@@ -34,6 +35,7 @@ def main():
     parser.add_argument("--model_dir", default='./ckpt', help="Model folder")
     parser.add_argument("--train_seg_x_dir", default=train_seg_path_x, help="train_seg_x_dir")
     parser.add_argument("--train_seg_y_dir", default=train_seg_path_y, help="train_seg_y_dir")
+    parser.add_argument("--test_seg_x_dir", default=test_seg_path_x, help="test_seg_x_dir")
     parser.add_argument("--vocab_path", default=vocab_path, help="Vocab path")
     parser.add_argument("--log_file", help="File in which to redirect console outputs", default="", type=str)
 
@@ -53,6 +55,9 @@ def main():
 
     if params["mode"] == "train":
         train(params)
+
+    elif params["mode"] == "test":
+        test(params)
 
 
 if __name__ == '__main__':
