@@ -1,10 +1,13 @@
 import tensorflow as tf
 from seq2seq_tf2.layers import Encoder, BahdanauAttention, Decoder, Pointer
+from utils.data_utils import load_word2vec
 
 
 class PGN(tf.keras.Model):
     def __init__(self, params):
         super(PGN, self).__init__()
+        # self.embedding_matrix = load_word2vec(params["vocab_size"])
+        # print()
         self.params = params
         self.encoder = Encoder(params["vocab_size"], params["embed_size"], params["enc_units"], params["batch_size"])
         self.attention = BahdanauAttention(params["attn_units"])
@@ -39,6 +42,8 @@ class PGN(tf.keras.Model):
             return tf.stack(final_dists, 1), dec_hidden
 
         else:
+            print('dec_inp is ', dec_inp)
+            print('dec_inp.shape[1] is ', dec_inp.shape[1])
             for t in range(dec_inp.shape[1]):
                 dec_x, pred, dec_hidden = self.decoder(tf.expand_dims(dec_inp[:, t], 1),
                                                        dec_hidden,

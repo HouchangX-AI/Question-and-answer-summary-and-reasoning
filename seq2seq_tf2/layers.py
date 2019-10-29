@@ -8,11 +8,11 @@ class Encoder(tf.keras.layers.Layer):
         super(Encoder, self).__init__()
         self.batch_sz = batch_sz
         self.enc_units = enc_units
-        embedding_matrix = load_word2vec(vocab_size)
-        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
-                                                   embeddings_initializer=tf.keras.initializers.Constant(embedding_matrix),
-                                                   input_length=config.maxlen,
-                                                   trainable=False)
+        # embedding_matrix = load_word2vec(vocab_size)
+        # self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
+        #                                            weights=[embedding_matrix],
+        #                                            trainable=False)
+        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
         self.gru = tf.keras.layers.GRU(self.enc_units,
                                        return_sequences=True,
                                        return_state=True,
@@ -47,8 +47,7 @@ class BahdanauAttention(tf.keras.layers.Layer):
         # score shape == (batch_size, max_length, 1)
         # we get 1 at the last axis because we are applying score to self.V
         # the shape of the tensor before applying self.V is (batch_size, max_length, units)
-        score = self.V(tf.nn.tanh(
-            self.W1(values) + self.W2(hidden_with_time_axis)))
+        score = self.V(tf.nn.tanh(self.W1(values) + self.W2(hidden_with_time_axis)))
 
         # attention_weights shape == (batch_size, max_length, 1)
         attention_weights = tf.nn.softmax(score, axis=1)
@@ -65,6 +64,10 @@ class Decoder(tf.keras.layers.Layer):
         super(Decoder, self).__init__()
         self.batch_sz = batch_sz
         self.dec_units = dec_units
+        # embedding_matrix = load_word2vec(vocab_size)
+        # self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
+        #                                            weights=[embedding_matrix],
+        #                                            trainable=False)
         self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
         self.gru = tf.keras.layers.GRU(self.dec_units,
                                        return_sequences=True,

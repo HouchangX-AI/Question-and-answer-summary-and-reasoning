@@ -22,7 +22,7 @@ def main():
     parser.add_argument("--adagrad_init_acc", default=0.1, help="Adagrad optimizer initial accumulator value. Please refer to the Adagrad optimizer API documentation on tensorflow site for more details.", type=float)
     parser.add_argument("--max_grad_norm", default=0.8, help="Gradient norm above which gradients must be clipped", type=float)
     parser.add_argument("--checkpoints_save_steps", default=10, help="Save checkpoints every N steps", type=int)
-    parser.add_argument("--mode", default='test', help="training, eval or test options")
+    parser.add_argument("--mode", default='train', help="training, eval or test options")
     parser.add_argument("--pointer_gen", default=False, help="training, eval or test options")
 
     pwd_path = pathlib.Path(os.path.abspath(__file__)).parent.parent

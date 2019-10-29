@@ -65,6 +65,12 @@ def save_data(data_1, data_2, data_3, data_path_1, data_path_2, data_path_3, sto
             f3.write('\n')
 
 
+def preprocess_sentence(sentence):
+    seg_list = segment(sentence.strip(), cut_type='word')
+    seg_line = ' '.join(seg_list)
+    return seg_line
+
+
 if __name__ == '__main__':
     train_list_src, train_list_trg = parse_data(config.train_path)
     test_list_src, _ = parse_data(config.test_path)

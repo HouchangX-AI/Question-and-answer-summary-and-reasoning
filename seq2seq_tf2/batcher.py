@@ -62,11 +62,11 @@ def article_to_ids(article_words, vocab):
     unk_id = vocab.word_to_id(UNKNOWN_TOKEN)
     for w in article_words:
         i = vocab.word_to_id(w)
-        if i == unk_id: # If w is OOV
-            if w not in oovs: # Add to list of OOVs
+        if i == unk_id:  # If w is OOV
+            if w not in oovs:  # Add to list of OOVs
                 oovs.append(w)
-            oov_num = oovs.index(w) # This is 0 for the first article OOV, 1 for the second article OOV...
-            ids.append(vocab.size() + oov_num) # This is e.g. 50000 for the first article OOV, 50001 for the second...
+            oov_num = oovs.index(w)  # This is 0 for the first article OOV, 1 for the second article OOV...
+            ids.append(vocab.size() + oov_num)  # This is e.g. 50000 for the first article OOV, 50001 for the second...
         else:
             ids.append(i)
     return ids, oovs
@@ -116,10 +116,16 @@ def abstract_to_sents(abstract):
     sents = []
     while True:
         try:
+            print('SENTENCE_START is ', SENTENCE_START)
+            print('in abstract is ', abstract)
             start_p = abstract.index(SENTENCE_START, cur)
+            print('start_p is ', start_p)
             end_p = abstract.index(SENTENCE_END, start_p + 1)
+            print('end_p is ', end_p)
             cur = end_p + len(SENTENCE_END)
+            print('cur is ', cur)
             sents.append(abstract[start_p + len(SENTENCE_START): end_p])
+            print('sents is ', sents)
         except ValueError as e: # no more sentences
             return sents
 
@@ -169,25 +175,40 @@ def example_generator(filenames_1, filenames_2, vocab_path, vocab_size, max_enc_
 
     for raw_record in train_dataset:
         article = raw_record[0].numpy().decode("utf-8")
+        # print('article is ', article)
         abstract = raw_record[1].numpy().decode("utf-8")
+        # print('abstract is ', abstract)
 
         start_decoding = vocab.word_to_id(START_DECODING)
+        # print('start_decoding is ', start_decoding)
         stop_decoding = vocab.word_to_id(STOP_DECODING)
+        # print('stop_decoding is ', stop_decoding)
 
         article_words = article.split()[:max_enc_len]
+        # print('max_enc_len is ', max_enc_len)
         # print('article_words is {}'.format(article_words))
         enc_len = len(article_words)
+        # print('enc_len is ', enc_len)
         enc_input = [vocab.word_to_id(w) for w in article_words]
+        # print('enc_input is ', enc_input)
         enc_input_extend_vocab, article_oovs = article_to_ids(article_words, vocab)
         # print('enc_input_extend_vocab is {}'.format(enc_input_extend_vocab))
         # print('article_oovs is {}'.format(article_oovs))
 
-        abstract_sentences = [sent.strip() for sent in abstract_to_sents(abstract)]
-        abstract = ' '.join(abstract_sentences)
+        # abstract_sentences = [sent.strip() for sent in abstract_to_sents(abstract)]
+        # print('abstract_sentences is ', abstract_sentences)
+
+        # abstract = ' '.join(abstract_sentences)
+        # print('abstract is ', abstract)
         abstract_words = abstract.split()
+        # print('abstract_words is ', abstract_words)
         abs_ids = [vocab.word_to_id(w) for w in abstract_words]
+        # print('abs_ids is', abs_ids)
         abs_ids_extend_vocab = abstract_to_ids(abstract_words, vocab, article_oovs)
+        # print('abs_ids_extend_vocab is ', abs_ids_extend_vocab)
         dec_input, target = get_dec_inp_targ_seqs(abs_ids, max_dec_len, start_decoding, stop_decoding)
+        # print('dec_input is ', dec_input)
+        # print('target is ', target)
         _, target = get_dec_inp_targ_seqs(abs_ids_extend_vocab, max_dec_len, start_decoding, stop_decoding)
         dec_len = len(dec_input)
 
@@ -201,8 +222,9 @@ def example_generator(filenames_1, filenames_2, vocab_path, vocab_size, max_enc_
             "dec_len": dec_len,
             "article": article,
             "abstract": abstract,
-            "abstract_sents": abstract_sentences
+            "abstract_sents": abstract
         }
+        # print('output is ', output)
         yield output
 
 
@@ -231,7 +253,7 @@ def batch_generator(generator, filenames_1, filenames_2, vocab_path, vocab_size,
                                                  "dec_len": [],
                                                  "article": [],
                                                  "abstract": [],
-                                                 "abstract_sents": [None]
+                                                 "abstract_sents": []
                                              })
 
     dataset = dataset.padded_batch(batch_size,
@@ -244,7 +266,7 @@ def batch_generator(generator, filenames_1, filenames_2, vocab_path, vocab_size,
                                                    "dec_len": [],
                                                    "article": [],
                                                    "abstract": [],
-                                                   "abstract_sents": [None]}),
+                                                   "abstract_sents": []}),
                                    padding_values={"enc_len": -1,
                                                    "enc_input": 1,
                                                    "enc_input_extend_vocab": 1,
