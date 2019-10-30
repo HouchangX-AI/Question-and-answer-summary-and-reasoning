@@ -52,4 +52,5 @@ steps_per_epoch = dataset_size // batch_sz
 checkpoint_path = "./checkpoints/lstm"
 
 vocab_path = os.path.join(output_dir, 'vocab.txt')
+beam_size = 3
 

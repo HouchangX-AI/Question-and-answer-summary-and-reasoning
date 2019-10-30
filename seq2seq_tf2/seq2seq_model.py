@@ -19,6 +19,19 @@ class PGN(tf.keras.Model):
         enc_output, enc_hidden = self.encoder(enc_inp, enc_hidden)
         return enc_hidden, enc_output
 
+    def call_decoder_onestep(self, latest_tokens, enc_hidden, dec_hidden):
+        if self.params["pointer_gen"]:
+            # TODO: implement
+            pass
+        else:
+            context_vector, _ = self.attention(dec_hidden, enc_hidden)
+            dec_x, pred, dec_hidden = self.decoder(latest_tokens,
+                                                   None,
+                                                   None,
+                                                   context_vector)
+        return dec_x, pred, dec_hidden
+
+
     def call(self, enc_output, dec_hidden, enc_inp, enc_extended_inp, dec_inp, batch_oov_len):
         predictions = []
         attentions = []

@@ -20,10 +20,14 @@ params = {'max_enc_len': 400,
           'mode': 'test',
           'pointer_gen': False,
           'model_dir': './ckpt',
-          'train_seg_x_dir': '/Users/zn-nlp/Documents/project1_auto_master_qa/datasets/train_set.seg_x.txt',
-          'train_seg_y_dir': '/Users/zn-nlp/Documents/project1_auto_master_qa/datasets/train_set.seg_y.txt',
-          'test_seg_x_dir': '/Users/zn-nlp/Documents/project1_auto_master_qa/datasets/test_set.seg_x.txt',
-          'vocab_path': '/Users/zn-nlp/Documents/project1_auto_master_qa/datasets/vocab.txt',
+          # 'train_seg_x_dir': '/Users/zn-nlp/Documents/project1_auto_master_qa/datasets/train_set.seg_x.txt',
+          # 'train_seg_y_dir': '/Users/zn-nlp/Documents/project1_auto_master_qa/datasets/train_set.seg_y.txt',
+          # 'test_seg_x_dir': '/Users/zn-nlp/Documents/project1_auto_master_qa/datasets/test_set.seg_x.txt',
+          # 'vocab_path': '/Users/zn-nlp/Documents/project1_auto_master_qa/datasets/vocab.txt',
+          'train_seg_x_dir': '../datasets/train_set.seg_x.txt',
+          'train_seg_y_dir': '../datasets/train_set.seg_y.txt',
+          'test_seg_x_dir': '../test_set.seg_x.txt',
+          'vocab_path': '../datasets/vocab.txt',
           'log_file': ''}
 
 
@@ -60,19 +64,20 @@ def test(sentence):
     print('enc_hidden is ', enc_hidden)
     print('enc_output is ', enc_output)
     dec_hidden = enc_hidden
-    dec_input = tf.expand_dims(start_decoding, 0)
+    dec_input = tf.expand_dims([start_decoding], 0)
     print('dec_input is ', dec_input)
 
     result = ''
-    for t in range(int(params['max_dec_len'])):
-        predictions, _ = model(enc_output, enc_hidden, enc_input, enc_input_extend_vocab, dec_input, batch_oov_len=None)
+    while dec_input != vocab.word_to_id(STOP_DECODING):
+        _, predictions, dec_hidden = model.call_decoder_onestep(dec_input, enc_output, dec_hidden)
         print('predictions is ', predictions)
 
         predicted_id = tf.argmax(predictions[0]).numpy()
         print('predicted_id', predicted_id)
         result += vocab.id_to_word(predicted_id) + ' '
 
-        if vocab.id_to_word(predicted_id) == SENTENCE_END:
+        if vocab.id_to_word(predicted_id) == SENTENCE_END \
+                or len(result.split()) >= params['max_dec_len']:
             print('Early stopping')
             break
 
