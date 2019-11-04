@@ -34,6 +34,7 @@ class PGN(tf.keras.Model):
         predictions = []
         attentions = []
         p_gens = []
+        context_vector, _ = self.attention(dec_hidden, enc_output)
 
         if self.params["pointer_gen"]:
             for t in range(dec_inp.shape[1]):
@@ -43,6 +44,7 @@ class PGN(tf.keras.Model):
                                                        context_vector)
                 context_vector, attn = self.attention(dec_hidden, enc_output)
                 p_gen = self.pointer(context_vector, dec_hidden, tf.squeeze(dec_x, axis=1))
+
                 attentions.append(attn)
                 p_gens.append(p_gen)
                 predictions.append(pred)
@@ -56,14 +58,12 @@ class PGN(tf.keras.Model):
                 return tf.stack(final_dists, 1), dec_hidden, context_vector, tf.stack(attentions, 1), tf.stack(p_gens, 1)
 
         else:
-            print('dec_inp is ', dec_inp)
-            print('dec_inp.shape[1] is ', dec_inp.shape[1])
             for t in range(dec_inp.shape[1]):
-                context_vector, _ = self.attention(dec_hidden, enc_output)
                 dec_x, pred, dec_hidden = self.decoder(tf.expand_dims(dec_inp[:, t], 1),
                                                        dec_hidden,
                                                        enc_output,
                                                        context_vector)
+                context_vector, attn = self.attention(dec_hidden, enc_output)
                 predictions.append(pred)
 
             return tf.stack(predictions, 1), dec_hidden

@@ -27,7 +27,10 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
 
         with tf.GradientTape() as tape:
             enc_hidden, enc_output = model.call_encoder(enc_inp)
+            print('enc_hidden is ', enc_hidden)
+            print('enc_output is ', enc_output)
             predictions, _ = model(enc_output, enc_hidden, enc_inp, enc_extended_inp, dec_inp, batch_oov_len)
+            print('predictions is ', predictions)
             loss = loss_function(dec_tar, predictions)
 
         variables = model.encoder.trainable_variables + model.attention.trainable_variables + model.decoder.trainable_variables + model.pointer.trainable_variables
@@ -40,6 +43,10 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
             # print("batch is {}".format(batch))
             t0 = time.time()
             print('batch[0]["enc_input"] is ', batch[0]["enc_input"])
+            print('batch[0]["extended_enc_input"] is ', batch[0]["extended_enc_input"])
+            print('batch[1]["dec_input"] is ', batch[1]["dec_input"])
+            print('batch[1]["dec_target"] is ', batch[1]["dec_target"])
+            print('batch[0]["max_oov_len"] is ', batch[0]["max_oov_len"])
             loss = train_step(batch[0]["enc_input"], batch[0]["extended_enc_input"], batch[1]["dec_input"],
                               batch[1]["dec_target"], batch[0]["max_oov_len"])
             print('Step {}, time {:.4f}, Loss {:.4f}'.format(int(ckpt.step),

@@ -15,18 +15,18 @@ class Encoder(tf.keras.layers.Layer):
                                        return_sequences=True,
                                        return_state=True,
                                        recurrent_initializer='glorot_uniform')
-        self.bigru = tf.keras.layers.Bidirectional(self.gru, merge_mode='concat')
+        # self.bigru = tf.keras.layers.Bidirectional(self.gru, merge_mode='concat')
 
     def call(self, x, hidden):
         x = self.embedding(x)
-        hidden = tf.split(hidden, num_or_size_splits=2, axis=1)
-        output, forward_state, backward_state = self.bigru(x, initial_state=hidden)
-        state = tf.concat([forward_state, backward_state], axis=1)
-        # output, state = self.gru(x, initial_state=hidden)
+        # hidden = tf.split(hidden, num_or_size_splits=2, axis=1)
+        # output, forward_state, backward_state = self.bigru(x, initial_state=hidden)
+        # state = tf.concat([forward_state, backward_state], axis=1)
+        output, state = self.gru(x, initial_state=hidden)
         return output, state
 
     def initialize_hidden_state(self):
-        return tf.zeros((self.batch_sz, 2*self.enc_units))
+        return tf.zeros((self.batch_sz, self.enc_units))
 
 
 class BahdanauAttention(tf.keras.layers.Layer):
@@ -70,7 +70,7 @@ class Decoder(tf.keras.layers.Layer):
                                        return_state=True,
                                        recurrent_initializer='glorot_uniform')
         self.fc = tf.keras.layers.Dense(vocab_size, activation=tf.keras.activations.softmax)
-        self.fc = tf.keras.layers.Dropout(0.5)
+        # self.fc = tf.keras.layers.Dropout(0.5)
 
     def call(self, x, hidden, enc_output, context_vector):
         # enc_output shape == (batch_size, max_length, hidden_size)
