@@ -5,21 +5,23 @@ import tensorflow as tf
 from seq2seq_tf2 import config
 
 from seq2seq_tf2.seq2seq_model import PGN
-from seq2seq_tf2.batcher import batcher
+from seq2seq_tf2.batcher import batcher, Vocab
 from seq2seq_tf2.train_helper import train_model
 
 
 def train(params):
     assert params["mode"].lower() == "train", "change training mode to 'train'"
 
-    tf.compat.v1.logging.info("Building the model ...")
+    print("Building the model ...")
     model = PGN(params)
 
-    tf.compat.v1.logging.info("Creating the batcher ...")
-    b = batcher(params["train_seg_x_dir"], params["train_seg_y_dir"], params["vocab_path"], params)
+    print("Creating the vocab ...")
+    vocab = Vocab(params["vocab_path"], params["vocab_size"])
 
-    tf.compat.v1.logging.info("Creating the checkpoint manager")
-    logdir = "{}/logdir".format(params["model_dir"])
+    print("Creating the batcher ...")
+    b = batcher(params["train_seg_x_dir"], params["train_seg_y_dir"], vocab, params)
+
+    print("Creating the checkpoint manager")
     checkpoint_dir = "{}/checkpoint".format(params["model_dir"])
     ckpt = tf.train.Checkpoint(step=tf.Variable(0), PGN=model)
     ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir, max_to_keep=11)
@@ -30,7 +32,7 @@ def train(params):
     else:
         print("Initializing from scratch.")
 
-    tf.compat.v1.logging.info("Starting the training ...")
+    print("Starting the training ...")
     train_model(model, b, params, ckpt, ckpt_manager)
 
 

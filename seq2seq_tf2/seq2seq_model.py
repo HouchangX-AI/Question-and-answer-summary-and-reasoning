@@ -6,12 +6,11 @@ from utils.data_utils import load_word2vec
 class PGN(tf.keras.Model):
     def __init__(self, params):
         super(PGN, self).__init__()
-        # self.embedding_matrix = load_word2vec(params["vocab_size"])
-        # print()
+        self.embedding_matrix = load_word2vec(params["vocab_size"])
         self.params = params
-        self.encoder = Encoder(params["vocab_size"], params["embed_size"], params["enc_units"], params["batch_size"])
+        self.encoder = Encoder(params["vocab_size"], params["embed_size"], params["enc_units"], params["batch_size"], self.embedding_matrix)
         self.attention = BahdanauAttention(params["attn_units"])
-        self.decoder = Decoder(params["vocab_size"], params["embed_size"], params["dec_units"], params["batch_size"])
+        self.decoder = Decoder(params["vocab_size"], params["embed_size"], params["dec_units"], params["batch_size"], self.embedding_matrix)
         self.pointer = Pointer()
 
     def call_encoder(self, enc_inp):
@@ -31,12 +30,10 @@ class PGN(tf.keras.Model):
                                                    context_vector)
         return dec_x, pred, dec_hidden
 
-
     def call(self, enc_output, dec_hidden, enc_inp, enc_extended_inp, dec_inp, batch_oov_len):
         predictions = []
         attentions = []
         p_gens = []
-        context_vector, _ = self.attention(dec_hidden, enc_output)
 
         if self.params["pointer_gen"]:
             for t in range(dec_inp.shape[1]):
@@ -52,12 +49,17 @@ class PGN(tf.keras.Model):
 
             final_dists = _calc_final_dist(enc_extended_inp, predictions, attentions, p_gens, batch_oov_len,
                                            self.params["vocab_size"], self.params["batch_size"])
-            return tf.stack(final_dists, 1), dec_hidden
+
+            if self.params["mode"] == "train":
+                return tf.stack(final_dists, 1), dec_hidden  # predictions_shape = (batch_size, dec_len, vocab_size) with dec_len = 1 in pred mode
+            else:
+                return tf.stack(final_dists, 1), dec_hidden, context_vector, tf.stack(attentions, 1), tf.stack(p_gens, 1)
 
         else:
             print('dec_inp is ', dec_inp)
             print('dec_inp.shape[1] is ', dec_inp.shape[1])
             for t in range(dec_inp.shape[1]):
+                context_vector, _ = self.attention(dec_hidden, enc_output)
                 dec_x, pred, dec_hidden = self.decoder(tf.expand_dims(dec_inp[:, t], 1),
                                                        dec_hidden,
                                                        enc_output,

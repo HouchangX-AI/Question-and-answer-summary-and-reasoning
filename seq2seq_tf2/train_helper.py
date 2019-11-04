@@ -26,7 +26,6 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
         loss = 0
 
         with tf.GradientTape() as tape:
-            print('enc_inp is ', enc_inp)
             enc_hidden, enc_output = model.call_encoder(enc_inp)
             predictions, _ = model(enc_output, enc_hidden, enc_inp, enc_extended_inp, dec_inp, batch_oov_len)
             loss = loss_function(dec_tar, predictions)
@@ -38,7 +37,7 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
 
     try:
         for batch in dataset:
-            print("batch is {}".format(batch))
+            # print("batch is {}".format(batch))
             t0 = time.time()
             print('batch[0]["enc_input"] is ', batch[0]["enc_input"])
             loss = train_step(batch[0]["enc_input"], batch[0]["extended_enc_input"], batch[1]["dec_input"],
@@ -46,10 +45,15 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
             print('Step {}, time {:.4f}, Loss {:.4f}'.format(int(ckpt.step),
                                                              time.time() - t0,
                                                              loss.numpy()))
+            if int(ckpt.step) == params["max_steps"]:
+                ckpt_manager.save(checkpoint_number=int(ckpt.step))
+                print("Saved checkpoint for step {}".format(int(ckpt.step)))
+                break
             if int(ckpt.step) % params["checkpoints_save_steps"] == 0:
                 ckpt_manager.save(checkpoint_number=int(ckpt.step))
                 print("Saved checkpoint for step {}".format(int(ckpt.step)))
             ckpt.step.assign_add(1)
+
     except KeyboardInterrupt:
         ckpt_manager.save(int(ckpt.step))
         print("Saved checkpoint for step {}".format(int(ckpt.step)))

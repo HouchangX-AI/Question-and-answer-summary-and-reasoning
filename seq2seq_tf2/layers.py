@@ -4,31 +4,29 @@ from utils.data_utils import load_word2vec
 
 
 class Encoder(tf.keras.layers.Layer):
-    def __init__(self, vocab_size, embedding_dim, enc_units, batch_sz):
+    def __init__(self, vocab_size, embedding_dim, enc_units, batch_sz, embedding_matrix):
         super(Encoder, self).__init__()
         self.batch_sz = batch_sz
         self.enc_units = enc_units
-        # embedding_matrix = load_word2vec(vocab_size)
-        # self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
-        #                                            weights=[embedding_matrix],
-        #                                            trainable=False)
-        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
+        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
+                                                   weights=[embedding_matrix],
+                                                   trainable=False)
         self.gru = tf.keras.layers.GRU(self.enc_units,
                                        return_sequences=True,
                                        return_state=True,
                                        recurrent_initializer='glorot_uniform')
-        # self.bigru = tf.keras.layers.Bidirectional(self.gru, merge_mode='concat')
+        self.bigru = tf.keras.layers.Bidirectional(self.gru, merge_mode='concat')
 
     def call(self, x, hidden):
         x = self.embedding(x)
-        # hidden = tf.split(hidden, num_or_size_splits=2, axis=1)
-        # output, forward_state, backward_state = self.bigru(x, initial_state=hidden)
-        # state = tf.concat([forward_state, backward_state], axis=1)
-        output, state = self.gru(x, initial_state=hidden)
+        hidden = tf.split(hidden, num_or_size_splits=2, axis=1)
+        output, forward_state, backward_state = self.bigru(x, initial_state=hidden)
+        state = tf.concat([forward_state, backward_state], axis=1)
+        # output, state = self.gru(x, initial_state=hidden)
         return output, state
 
     def initialize_hidden_state(self):
-        return tf.zeros((self.batch_sz, self.enc_units))
+        return tf.zeros((self.batch_sz, 2*self.enc_units))
 
 
 class BahdanauAttention(tf.keras.layers.Layer):
@@ -60,21 +58,19 @@ class BahdanauAttention(tf.keras.layers.Layer):
 
 
 class Decoder(tf.keras.layers.Layer):
-    def __init__(self, vocab_size, embedding_dim, dec_units, batch_sz):
+    def __init__(self, vocab_size, embedding_dim, dec_units, batch_sz, embedding_matrix):
         super(Decoder, self).__init__()
         self.batch_sz = batch_sz
         self.dec_units = dec_units
-        # embedding_matrix = load_word2vec(vocab_size)
-        # self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
-        #                                            weights=[embedding_matrix],
-        #                                            trainable=False)
-        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
+        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
+                                                   weights=[embedding_matrix],
+                                                   trainable=False)
         self.gru = tf.keras.layers.GRU(self.dec_units,
                                        return_sequences=True,
                                        return_state=True,
                                        recurrent_initializer='glorot_uniform')
         self.fc = tf.keras.layers.Dense(vocab_size, activation=tf.keras.activations.softmax)
-        # self.fc = tf.nn.dropout(0.5)
+        self.fc = tf.keras.layers.Dropout(0.5)
 
     def call(self, x, hidden, enc_output, context_vector):
         # enc_output shape == (batch_size, max_length, hidden_size)
