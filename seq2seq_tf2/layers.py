@@ -11,10 +11,17 @@ class Encoder(tf.keras.layers.Layer):
         self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
                                                    weights=[embedding_matrix],
                                                    trainable=False)
-        self.gru = tf.keras.layers.GRU(self.enc_units,
-                                       return_sequences=True,
-                                       return_state=True,
-                                       recurrent_initializer='glorot_uniform')
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        if gpus:
+            self.gru = tf.keras.layers.CuDNNGRU(self.enc_units,
+                                                return_sequences=True,
+                                                return_state=True,
+                                                recurrent_initializer='glorot_uniform')
+        else:
+            self.gru = tf.keras.layers.GRU(self.enc_units,
+                                           return_sequences=True,
+                                           return_state=True,
+                                           recurrent_initializer='glorot_uniform')
         # self.bigru = tf.keras.layers.Bidirectional(self.gru, merge_mode='concat')
 
     def call(self, x, hidden):
@@ -65,10 +72,17 @@ class Decoder(tf.keras.layers.Layer):
         self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
                                                    weights=[embedding_matrix],
                                                    trainable=False)
-        self.gru = tf.keras.layers.GRU(self.dec_units,
-                                       return_sequences=True,
-                                       return_state=True,
-                                       recurrent_initializer='glorot_uniform')
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        if gpus:
+            self.gru = tf.keras.layers.CuDNNGRU(self.enc_units,
+                                                return_sequences=True,
+                                                return_state=True,
+                                                recurrent_initializer='glorot_uniform')
+        else:
+            self.gru = tf.keras.layers.GRU(self.enc_units,
+                                           return_sequences=True,
+                                           return_state=True,
+                                           recurrent_initializer='glorot_uniform')
         self.fc = tf.keras.layers.Dense(vocab_size, activation=tf.keras.activations.softmax)
         # self.fc = tf.keras.layers.Dropout(0.5)
 
