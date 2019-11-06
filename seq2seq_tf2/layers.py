@@ -4,13 +4,11 @@ from utils.data_utils import load_word2vec
 
 
 class Encoder(tf.keras.layers.Layer):
-    def __init__(self, vocab_size, embedding_dim, enc_units, batch_sz, embedding_matrix):
+    def __init__(self, vocab_size, embedding_dim, enc_units, batch_sz):
         super(Encoder, self).__init__()
         self.batch_sz = batch_sz
         self.enc_units = enc_units
-        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
-                                                   weights=[embedding_matrix],
-                                                   trainable=False)
+        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
         gpus = tf.config.experimental.list_physical_devices('GPU')
         if gpus:
             self.gru = tf.keras.layers.CuDNNGRU(self.enc_units,
@@ -65,13 +63,14 @@ class BahdanauAttention(tf.keras.layers.Layer):
 
 
 class Decoder(tf.keras.layers.Layer):
-    def __init__(self, vocab_size, embedding_dim, dec_units, batch_sz, embedding_matrix):
+    def __init__(self, vocab_size, embedding_dim, dec_units, batch_sz):
         super(Decoder, self).__init__()
         self.batch_sz = batch_sz
         self.dec_units = dec_units
-        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
-                                                   weights=[embedding_matrix],
-                                                   trainable=False)
+        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
+        # self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
+        #                                            weights=[embedding_matrix],
+        #                                            trainable=False)
         gpus = tf.config.experimental.list_physical_devices('GPU')
         if gpus:
             self.gru = tf.keras.layers.CuDNNGRU(self.enc_units,

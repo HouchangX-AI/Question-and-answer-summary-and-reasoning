@@ -6,11 +6,11 @@ from utils.data_utils import load_word2vec
 class PGN(tf.keras.Model):
     def __init__(self, params):
         super(PGN, self).__init__()
-        self.embedding_matrix = load_word2vec(params["vocab_size"])
+        # self.embedding_matrix = load_word2vec(params["vocab_size"])
         self.params = params
-        self.encoder = Encoder(params["vocab_size"], params["embed_size"], params["enc_units"], params["batch_size"], self.embedding_matrix)
+        self.encoder = Encoder(params["vocab_size"], params["embed_size"], params["enc_units"], params["batch_size"])
         self.attention = BahdanauAttention(params["attn_units"])
-        self.decoder = Decoder(params["vocab_size"], params["embed_size"], params["dec_units"], params["batch_size"], self.embedding_matrix)
+        self.decoder = Decoder(params["vocab_size"], params["embed_size"], params["dec_units"], params["batch_size"])
         self.pointer = Pointer()
 
     def call_encoder(self, enc_inp):
