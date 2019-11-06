@@ -7,37 +7,12 @@ from tqdm import tqdm
 from seq2seq_tf2 import config
 import json
 
-_params = {'max_enc_len': 400,
-          'max_dec_len': 100,
-          'batch_size': 1,
-          'vocab_size': 50000,
-          'embed_size': 256,
-          'enc_units': 256,
-          'dec_units': 256,
-          'attn_units': 512,
-          'learning_rate': 0.015,
-          'adagrad_init_acc': 0.1,
-          'max_grad_norm': 0.8,
-          'checkpoints_save_steps': 10,
-          'mode': 'test',
-          'pointer_gen': False,
-          'model_dir': './ckpt',
-          # 'train_seg_x_dir': '/Users/zn-nlp/Documents/project1_auto_master_qa/datasets/train_set.seg_x.txt',
-          # 'train_seg_y_dir': '/Users/zn-nlp/Documents/project1_auto_master_qa/datasets/train_set.seg_y.txt',
-          # 'test_seg_x_dir': '/Users/zn-nlp/Documents/project1_auto_master_qa/datasets/test_set.seg_x.txt',
-          # 'vocab_path': '/Users/zn-nlp/Documents/project1_auto_master_qa/datasets/vocab.txt',
-          'train_seg_x_dir': '../datasets/train_set.seg_x.txt',
-          'train_seg_y_dir': '../datasets/train_set.seg_y.txt',
-          'test_seg_x_dir': '../test_set.seg_x.txt',
-          'vocab_path': '../datasets/vocab.txt',
-          'log_file': ''}
-
 
 def test(params):
     assert params["mode"].lower() == "test", "change training mode to 'test' or 'eval'"
     assert params["beam_size"] == params["batch_size"], "Beam size must be equal to batch_size, change the params"
 
-    tf.compat.v1.logging.info("Building the model ...")
+    print("Building the model ...")
     model = PGN(params)
 
     print("Creating the vocab ...")

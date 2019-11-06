@@ -19,9 +19,7 @@ class Vocab:
 
         with open(vocab_file, 'r') as f:
             for line in f:
-                # print('line is {}'.format(line))
                 pieces = line.split()
-                # print('pieces is {}'.format(pieces))
                 if len(pieces) != 2:
                     print('Warning : incorrectly formatted line in vocabulary file : %s\n' % line)
                     continue
@@ -77,12 +75,12 @@ def abstract_to_ids(abstract_words, vocab, article_oovs):
     unk_id = vocab.word_to_id(UNKNOWN_TOKEN)
     for w in abstract_words:
         i = vocab.word_to_id(w)
-        if i == unk_id: # If w is an OOV word
-            if w in article_oovs: # If w is an in-article OOV
-                vocab_idx = vocab.size() + article_oovs.index(w) # Map to its temporary article OOV number
+        if i == unk_id:  # If w is an OOV word
+            if w in article_oovs:  # If w is an in-article OOV
+                vocab_idx = vocab.size() + article_oovs.index(w)  # Map to its temporary article OOV number
                 ids.append(vocab_idx)
-            else: # If w is an out-of-article OOV
-                ids.append(unk_id) # Map to the UNK token id
+            else:  # If w is an out-of-article OOV
+                ids.append(unk_id)  # Map to the UNK token id
         else:
             ids.append(i)
     return ids
@@ -92,13 +90,13 @@ def output_to_words(id_list, vocab, article_oovs):
     words = []
     for i in id_list:
         try:
-            w = vocab.id_to_word(i) # might be [UNK]
-        except ValueError as e: # w is OOV
+            w = vocab.id_to_word(i)  # might be [UNK]
+        except ValueError as e:  # w is OOV
             assert article_oovs is not None, "Error: model produced a word ID that isn't in the vocabulary. This should not happen in baseline (no pointer-generator) mode"
             article_oov_idx = i - vocab.size()
             try:
                 w = article_oovs[article_oov_idx]
-            except ValueError as e: # i doesn't correspond to an article oov
+            except ValueError as e:  # i doesn't correspond to an article oov
                 raise ValueError('Error: model produced word ID %i which corresponds to article OOV %i but this example only has %i article OOVs' % (i, article_oov_idx, len(article_oovs)))
         words.append(w)
     return words
@@ -120,7 +118,7 @@ def abstract_to_sents(abstract):
             end_p = abstract.index(SENTENCE_END, start_p + 1)
             cur = end_p + len(SENTENCE_END)
             sents.append(abstract[start_p + len(SENTENCE_START): end_p])
-        except ValueError as e: # no more sentences
+        except ValueError as e:  # no more sentences
             return sents
 
 
@@ -138,22 +136,13 @@ def get_dec_inp_targ_seqs(sequence, max_len, start_id, stop_id):
     """
     inp = [start_id] + sequence[:]
     target = sequence[:]
-    if len(inp) > max_len: # truncate
+    if len(inp) > max_len:  # truncate
         inp = inp[:max_len]
-        target = target[:max_len] # no end_token
-    else: # no truncation
-        target.append(stop_id) # end token
+        target = target[:max_len]  # no end_token
+    else:  # no truncation
+        target.append(stop_id)  # end token
     assert len(inp) == len(target)
     return inp, target
-
-
-# def _parse_function(example_proto):
-#     # Create a description of the features.
-#     feature_description = {'article': tf.io.FixedLenFeature([], tf.string, default_value=''),
-#                            'abstract': tf.io.FixedLenFeature([], tf.string, default_value='')}
-#     # Parse the input `tf.Example` proto using the dictionary above.
-#     parsed_example = tf.io.parse_single_example(example_proto, feature_description)
-#     return parsed_example
 
 
 def example_generator(filenames_1, filenames_2, vocab, max_enc_len, max_dec_len, mode, batch_size):
@@ -166,40 +155,20 @@ def example_generator(filenames_1, filenames_2, vocab, max_enc_len, max_dec_len,
 
     for raw_record in train_dataset:
         article = raw_record[0].numpy().decode("utf-8")
-        # print('article is ', article)
         abstract = raw_record[1].numpy().decode("utf-8")
-        # print('abstract is ', abstract)
 
         start_decoding = vocab.word_to_id(START_DECODING)
-        # print('start_decoding is ', start_decoding)
         stop_decoding = vocab.word_to_id(STOP_DECODING)
-        # print('stop_decoding is ', stop_decoding)
 
         article_words = article.split()[:max_enc_len]
-        # print('max_enc_len is ', max_enc_len)
-        # print('article_words is {}'.format(article_words))
         enc_len = len(article_words)
-        # print('enc_len is ', enc_len)
         enc_input = [vocab.word_to_id(w) for w in article_words]
-        # print('enc_input is ', enc_input)
         enc_input_extend_vocab, article_oovs = article_to_ids(article_words, vocab)
-        # print('enc_input_extend_vocab is {}'.format(enc_input_extend_vocab))
-        # print('article_oovs is {}'.format(article_oovs))
 
-        # abstract_sentences = [sent.strip() for sent in abstract_to_sents(abstract)]
-        # print('abstract_sentences is ', abstract_sentences)
-
-        # abstract = ' '.join(abstract_sentences)
-        # print('abstract is ', abstract)
         abstract_words = abstract.split()
-        # print('abstract_words is ', abstract_words)
         abs_ids = [vocab.word_to_id(w) for w in abstract_words]
-        # print('abs_ids is', abs_ids)
         abs_ids_extend_vocab = abstract_to_ids(abstract_words, vocab, article_oovs)
-        # print('abs_ids_extend_vocab is ', abs_ids_extend_vocab)
         dec_input, target = get_dec_inp_targ_seqs(abs_ids, max_dec_len, start_decoding, stop_decoding)
-        # print('dec_input is ', dec_input)
-        # print('target is ', target)
         _, target = get_dec_inp_targ_seqs(abs_ids_extend_vocab, max_dec_len, start_decoding, stop_decoding)
         dec_len = len(dec_input)
 
@@ -290,7 +259,6 @@ def batch_generator(generator, filenames_1, filenames_2, vocab, max_enc_len, max
 
 
 def batcher(filenames_1, filenames_2, vocab, hpm):
-    # filenames = glob.glob("{}/*.tfrecords".format(data_path))
     dataset = batch_generator(example_generator, filenames_1, filenames_2, vocab, hpm["max_enc_len"],
                               hpm["max_dec_len"], hpm["batch_size"], hpm["mode"])
     return dataset
