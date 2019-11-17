@@ -1,10 +1,14 @@
 import numpy as np
 import pandas as pd
+import re
 from jieba import posseg
 from seq2seq_tf2 import config
 import jieba
-from tokenizer import segment
+from utils.tokenizer import segment
 from seq2seq_tf2 import config
+
+
+REMOVE_WORDS = ['|', '[', ']', '语音', '图片']
 
 
 def read_stopwords(path):
@@ -14,6 +18,11 @@ def read_stopwords(path):
             line = line.strip()
             lines.add(line)
     return lines
+
+
+def remove_words(words_list):
+    words_list = [word for word in words_list if word not in REMOVE_WORDS]
+    return words_list
 
 
 def parse_data(path):
@@ -33,6 +42,7 @@ def save_data(data_1, data_2, data_3, data_path_1, data_path_2, data_path_3, sto
             # print(line)
             if isinstance(line, str):
                 seg_list = segment(line.strip(), cut_type='word')
+                seg_list = remove_words(seg_list)
                 # seg_words = []
                 # for j in seg_list:
                 #     if j in stopwords:
@@ -47,6 +57,7 @@ def save_data(data_1, data_2, data_3, data_path_1, data_path_2, data_path_3, sto
         for line in data_2:
             if isinstance(line, str):
                 seg_list = segment(line.strip(), cut_type='word')
+                seg_list = remove_words(seg_list)
                 # seg_words = []
                 # for j in seg_list:
                 #     if j in stopwords:
@@ -60,6 +71,7 @@ def save_data(data_1, data_2, data_3, data_path_1, data_path_2, data_path_3, sto
         for line in data_3:
             if isinstance(line, str):
                 seg_list = segment(line.strip(), cut_type='word')
+                seg_list = remove_words(seg_list)
                 seg_line = ' '.join(seg_list)
                 f3.write('%s' % seg_line)
             f3.write('\n')
