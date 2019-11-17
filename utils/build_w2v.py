@@ -3,25 +3,6 @@ from gensim.models.word2vec import LineSentence
 from gensim.models.keyedvectors import KeyedVectors
 from seq2seq_tf2 import config
 from utils.data_utils import dump_pkl
-from seq2seq_tf2.data_reader import read_data, build_vocab, save_word_dict
-
-
-def get_sentence(sentence_tag, word_sep=' ', pos_sep='|'):
-    """
-    文本拼接
-    :param sentence_tag:
-    :param word_sep:
-    :param pos_sep:
-    :return:
-    """
-    words = []
-    for item in sentence_tag.split(word_sep):
-        if pos_sep in item:
-            index = item.rindex(pos_sep)
-            words.append(item[:index])
-        else:
-            words.append(item.strip())
-    return word_sep.join(words)
 
 
 def read_lines(path, col_sep=None):
@@ -37,18 +18,13 @@ def read_lines(path, col_sep=None):
     return lines
 
 
-def extract_sentence(train_x_seg_path, train_y_seg_path, test_seg_path, col_sep='\t'):
+def extract_sentence(train_x_seg_path, train_y_seg_path, test_seg_path):
     ret = []
     lines = read_lines(train_x_seg_path)
     lines += read_lines(train_y_seg_path)
     lines += read_lines(test_seg_path)
     for line in lines:
         ret.append(line)
-        # if col_sep in line:
-        #     index = line.index(col_sep)
-        #     word_tag = line[index + 1:]
-        #     sentence = ''.join(get_sentence(word_tag))
-        #     ret.append(sentence)
     return ret
 
 
@@ -60,8 +36,8 @@ def save_sentence(lines, sentence_path):
 
 
 def build(train_x_seg_path, test_y_seg_path, test_seg_path, out_path=None, sentence_path='',
-          w2v_bin_path="w2v.bin", min_count=1, col_sep='\t'):
-    sentences = extract_sentence(train_x_seg_path, test_y_seg_path, test_seg_path, col_sep=col_sep)
+          w2v_bin_path="w2v.bin", min_count=1):
+    sentences = extract_sentence(train_x_seg_path, test_y_seg_path, test_seg_path)
     save_sentence(sentences, sentence_path)
     print('train w2v model...')
     # train model
@@ -86,6 +62,5 @@ if __name__ == '__main__':
           config.test_seg_path_x,
           out_path=config.word2vec_output,
           sentence_path=config.sentence_path,
-          w2v_bin_path="w2v.bin",
-          min_count=1,
-          col_sep='\t')
+          w2v_bin_path=config.w2v_bin_path,
+          min_count=1)
