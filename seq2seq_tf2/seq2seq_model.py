@@ -6,7 +6,7 @@ from utils.data_utils import load_word2vec
 class PGN(tf.keras.Model):
     def __init__(self, params):
         super(PGN, self).__init__()
-        # self.embedding_matrix = load_word2vec(params["vocab_size"])
+        self.embedding_matrix = load_word2vec(params["vocab_size"])
         self.params = params
         self.encoder = Encoder(params["vocab_size"], params["embed_size"], params["enc_units"], params["batch_size"])
         self.attention = BahdanauAttention(params["attn_units"])
@@ -18,23 +18,12 @@ class PGN(tf.keras.Model):
         enc_output, enc_hidden = self.encoder(enc_inp, enc_hidden)
         return enc_hidden, enc_output
 
-    def call_decoder_onestep(self, latest_tokens, enc_hidden, dec_hidden):
-        if self.params["pointer_gen"]:
-            # TODO: implement
-            pass
-        else:
-            context_vector, _ = self.attention(dec_hidden, enc_hidden)
-            dec_x, pred, dec_hidden = self.decoder(latest_tokens,
-                                                   None,
-                                                   None,
-                                                   context_vector)
-        return dec_x, pred, dec_hidden
-
     def call(self, enc_output, dec_hidden, enc_inp, enc_extended_inp, dec_inp, batch_oov_len):
         predictions = []
         attentions = []
+        coverages = []
         p_gens = []
-        context_vector, _ = self.attention(dec_hidden, enc_output)
+        context_vector, attn, coverage = self.attention(dec_hidden, enc_output)
 
         if self.params["pointer_gen"]:
             for t in range(dec_inp.shape[1]):
@@ -42,11 +31,12 @@ class PGN(tf.keras.Model):
                                                        dec_hidden,
                                                        enc_output,
                                                        context_vector)
-                context_vector, attn = self.attention(dec_hidden, enc_output)
+                context_vector, attn, coverage = self.attention(dec_hidden, enc_output)
                 p_gen = self.pointer(context_vector, dec_hidden, tf.squeeze(dec_x, axis=1))
 
                 attentions.append(attn)
                 p_gens.append(p_gen)
+                coverages.append(coverage)
                 predictions.append(pred)
 
             final_dists = _calc_final_dist(enc_extended_inp, predictions, attentions, p_gens, batch_oov_len,
