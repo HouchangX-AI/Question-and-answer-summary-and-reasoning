@@ -35,6 +35,7 @@ test_seg_path = os.path.join(output_dir, 'test_set.seg.csv')
 stop_words_path = os.path.join(output_dir, 'stop_words.txt')
 sentence_path = os.path.join(output_dir, 'sentences.txt')
 word2vec_output = os.path.join(output_dir, 'word2vec.txt')
+w2v_bin_path = os.path.join(output_dir, 'w2v.bin')
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 

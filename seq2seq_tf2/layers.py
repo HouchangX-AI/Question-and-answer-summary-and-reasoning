@@ -20,46 +20,57 @@ class Encoder(tf.keras.layers.Layer):
                                            return_sequences=True,
                                            return_state=True,
                                            recurrent_initializer='glorot_uniform')
-        # self.bigru = tf.keras.layers.Bidirectional(self.gru, merge_mode='concat')
+        self.bigru = tf.keras.layers.Bidirectional(self.gru, merge_mode='concat')
 
     def call(self, x, hidden):
         x = self.embedding(x)
-        # hidden = tf.split(hidden, num_or_size_splits=2, axis=1)
-        # output, forward_state, backward_state = self.bigru(x, initial_state=hidden)
-        # state = tf.concat([forward_state, backward_state], axis=1)
-        output, state = self.gru(x, initial_state=hidden)
+        hidden = tf.split(hidden, num_or_size_splits=2, axis=1)
+        output, forward_state, backward_state = self.bigru(x, initial_state=hidden)
+        state = tf.concat([forward_state, backward_state], axis=1)
+        # output, state = self.gru(x, initial_state=hidden)
         return output, state
 
     def initialize_hidden_state(self):
-        return tf.zeros((self.batch_sz, self.enc_units))
+        return tf.zeros((self.batch_sz, 2*self.enc_units))
 
 
 class BahdanauAttention(tf.keras.layers.Layer):
-    def __init__(self, units):
+    def __init__(self, params):
         super(BahdanauAttention, self).__init__()
-        self.W1 = tf.keras.layers.Dense(units)
-        self.W2 = tf.keras.layers.Dense(units)
+        self.params = params
+        if self.params["is_coverage"]:
+            self.Wc = tf.keras.layers.Dense(params["attn_units"])
+        self.W1 = tf.keras.layers.Dense(params["attn_units"])
+        self.W2 = tf.keras.layers.Dense(params["attn_units"])
         self.V = tf.keras.layers.Dense(1)
 
-    def call(self, query, values):
+    def call(self, dec_hidden, enc_output, coverage, prev_coverage):
         # hidden shape == (batch_size, hidden size)
         # hidden_with_time_axis shape == (batch_size, 1, hidden size)
         # we are doing this to perform addition to calculate the score
-        hidden_with_time_axis = tf.expand_dims(query, 1)
+        hidden_with_time_axis = tf.expand_dims(dec_hidden, 1)
+        att_features = self.W1(enc_output) + self.W2(hidden_with_time_axis)
+
+        if self.params["is_coverage"]:
+            coverage_feature = self.W_c(coverage)
+            att_features = att_features + coverage_feature
 
         # score shape == (batch_size, max_length, 1)
         # we get 1 at the last axis because we are applying score to self.V
         # the shape of the tensor before applying self.V is (batch_size, max_length, units)
-        score = self.V(tf.nn.tanh(self.W1(values) + self.W2(hidden_with_time_axis)))
+        score = self.V(tf.nn.tanh(att_features))
 
         # attention_weights shape == (batch_size, max_length, 1)
         attention_weights = tf.nn.softmax(score, axis=1)
 
         # context_vector shape after sum == (batch_size, hidden_size)
-        context_vector = attention_weights * values
+        context_vector = attention_weights * enc_output
         context_vector = tf.reduce_sum(context_vector, axis=1)
 
-        return context_vector, tf.squeeze(attention_weights, -1)
+        if self.params["is_coverage"]:
+            coverage = coverage + attention_weights
+
+        return context_vector, tf.squeeze(attention_weights, -1), coverage
 
 
 class Decoder(tf.keras.layers.Layer):
