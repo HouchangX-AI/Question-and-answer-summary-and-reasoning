@@ -1,5 +1,4 @@
 import tensorflow as tf
-import glob
 from seq2seq_tf2 import config
 
 SENTENCE_START = '<s>'
@@ -170,6 +169,7 @@ def example_generator(filenames_1, filenames_2, vocab, max_enc_len, max_dec_len,
         abs_ids_extend_vocab = abstract_to_ids(abstract_words, vocab, article_oovs)
         dec_input, target = get_dec_inp_targ_seqs(abs_ids, max_dec_len, start_decoding, stop_decoding)
         _, target = get_dec_inp_targ_seqs(abs_ids_extend_vocab, max_dec_len, start_decoding, stop_decoding)
+
         dec_len = len(dec_input)
 
         output = {
