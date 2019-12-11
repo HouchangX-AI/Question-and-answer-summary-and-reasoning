@@ -146,14 +146,18 @@ def get_dec_inp_targ_seqs(sequence, max_len, start_id, stop_id):
 
 def example_generator(filenames_1, filenames_2, vocab, max_enc_len, max_dec_len, mode, batch_size):
     dataset_1 = tf.data.TextLineDataset(filenames_1)
+    # print('dataset_1 is ', dataset_1)
     dataset_2 = tf.data.TextLineDataset(filenames_2)
 
     train_dataset = tf.data.Dataset.zip((dataset_1, dataset_2))
     if mode == "train":
-        train_dataset = train_dataset.shuffle(10, reshuffle_each_iteration=True).repeat()
+        train_dataset = train_dataset.shuffle(1000, reshuffle_each_iteration=True).repeat()
 
+    n = 0
     for raw_record in train_dataset:
+        # print('n is ', n)
         article = raw_record[0].numpy().decode("utf-8")
+        # print('article is ', article)
         abstract = raw_record[1].numpy().decode("utf-8")
 
         start_decoding = vocab.word_to_id(START_DECODING)
@@ -164,6 +168,7 @@ def example_generator(filenames_1, filenames_2, vocab, max_enc_len, max_dec_len,
         enc_input = [vocab.word_to_id(w) for w in article_words]
         enc_input_extend_vocab, article_oovs = article_to_ids(article_words, vocab)
 
+        abstract_sentences = [""]
         abstract_words = abstract.split()
         abs_ids = [vocab.word_to_id(w) for w in abstract_words]
         abs_ids_extend_vocab = abstract_to_ids(abstract_words, vocab, article_oovs)
@@ -182,8 +187,9 @@ def example_generator(filenames_1, filenames_2, vocab, max_enc_len, max_dec_len,
             "dec_len": dec_len,
             "article": article,
             "abstract": abstract,
-            "abstract_sents": abstract
+            "abstract_sents": abstract_sentences
         }
+
         if mode == "test":
             for _ in range(batch_size):
                 yield output
@@ -215,7 +221,7 @@ def batch_generator(generator, filenames_1, filenames_2, vocab, max_enc_len, max
                                                  "dec_len": [],
                                                  "article": [],
                                                  "abstract": [],
-                                                 "abstract_sents": []
+                                                 "abstract_sents": [None]
                                              })
 
     dataset = dataset.padded_batch(batch_size,
@@ -228,7 +234,7 @@ def batch_generator(generator, filenames_1, filenames_2, vocab, max_enc_len, max
                                                    "dec_len": [],
                                                    "article": [],
                                                    "abstract": [],
-                                                   "abstract_sents": []}),
+                                                   "abstract_sents": [None]}),
                                    padding_values={"enc_len": -1,
                                                    "enc_input": 1,
                                                    "enc_input_extend_vocab": 1,
@@ -236,8 +242,8 @@ def batch_generator(generator, filenames_1, filenames_2, vocab, max_enc_len, max
                                                    "dec_input": 1,
                                                    "target": 1,
                                                    "dec_len": -1,
-                                                   "article": b"",
-                                                   "abstract": b"",
+                                                   "article": b'',
+                                                   "abstract": b'',
                                                    "abstract_sents": b''},
                                    drop_remainder=True)
 

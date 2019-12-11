@@ -30,7 +30,7 @@ def main():
     parser.add_argument("--max_steps", default=10000, help="Max number of iterations", type=int)
     parser.add_argument("--num_to_test", default=5, help="Number of examples to test", type=int)
     parser.add_argument("--mode", default='train', help="training, eval or test options")
-    parser.add_argument("--pointer_gen", default=False, help="training, eval or test options")
+    parser.add_argument("--pointer_gen", default=True, help="training, eval or test options")
     parser.add_argument("--is_coverage", default=False, help="is_coverage")
 
     pwd_path = pathlib.Path(os.path.abspath(__file__)).parent.parent

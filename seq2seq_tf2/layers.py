@@ -7,12 +7,14 @@ class Encoder(tf.keras.layers.Layer):
     def __init__(self, vocab_size, embedding_dim, enc_units, batch_sz, embedding_matrix):
         super(Encoder, self).__init__()
         self.batch_sz = batch_sz
+        # self.enc_units = enc_units
         self.enc_units = enc_units // 2
         self.embedding = tf.keras.layers.Embedding(vocab_size,
                                                    embedding_dim,
                                                    weights=[embedding_matrix],
                                                    trainable=False)
         gpus = tf.config.experimental.list_physical_devices('GPU')
+        print('gpus number is ', gpus)
         if gpus:
             self.gru = tf.keras.layers.CuDNNGRU(self.enc_units,
                                                 return_sequences=True,
@@ -23,7 +25,7 @@ class Encoder(tf.keras.layers.Layer):
                                            return_sequences=True,
                                            return_state=True,
                                            recurrent_initializer='glorot_uniform')
-        self.bigru = tf.keras.layers.Bidirectional(self.gru, merge_mode='concat')
+            self.bigru = tf.keras.layers.Bidirectional(self.gru, merge_mode='concat')
 
     def call(self, x, hidden):
         x = self.embedding(x)
@@ -95,10 +97,12 @@ class Decoder(tf.keras.layers.Layer):
                                            return_sequences=True,
                                            return_state=True,
                                            recurrent_initializer='glorot_uniform')
-        self.fc = tf.keras.layers.Dense(vocab_size, activation=tf.keras.activations.softmax)
         self.fc = tf.keras.layers.Dropout(0.5)
+        self.fc = tf.keras.layers.Dense(vocab_size, activation=tf.keras.activations.softmax)
 
-    def call(self, x, hidden, enc_output, context_vector):
+    # def call(self, x, hidden, enc_output, context_vector):
+    def call(self, x, context_vector):
+
         # enc_output shape == (batch_size, max_length, hidden_size)
 
         # x shape after passing through embedding == (batch_size, 1, embedding_dim)
