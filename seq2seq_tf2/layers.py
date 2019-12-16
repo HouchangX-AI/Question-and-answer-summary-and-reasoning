@@ -50,32 +50,51 @@ class BahdanauAttention(tf.keras.layers.Layer):
         self.W2 = tf.keras.layers.Dense(self.params["attn_units"])
         self.V = tf.keras.layers.Dense(1)
 
-    def call(self, dec_hidden, enc_output, coverage=0, prev_coverage=0):
+    def call(self, dec_hidden, enc_output, enc_padding_mask, coverage=0):
+        """
+        dec_hidden:
+        """
         # hidden shape == (batch_size, hidden size)
         # hidden_with_time_axis shape == (batch_size, 1, hidden size)
         # we are doing this to perform addition to calculate the score
         hidden_with_time_axis = tf.expand_dims(dec_hidden, 1)
-        att_features = self.W1(enc_output) + self.W2(hidden_with_time_axis)
+        # att_features = self.W1(enc_output) + self.W2(hidden_with_time_axis)
 
-        if self.params["is_coverage"]:
-            coverage_feature = self.W_c(coverage)
-            att_features = att_features + coverage_feature
+        def masked_attention(e):
+            """Take softmax of e then apply enc_padding_mask and re-normalize"""
+            attn_dist = tf.nn.softmax(e)  # take softmax. shape (batch_size, attn_length)
+            attn_dist *= enc_padding_mask  # apply mask
+            masked_sums = tf.reduce_sum(attn_dist, axis=1)  # shape (batch_size)
+            return attn_dist / tf.reshape(masked_sums, [-1, 1])  # re-normalize
 
-        # score shape == (batch_size, max_length, 1)
-        # we get 1 at the last axis because we are applying score to self.V
-        # the shape of the tensor before applying self.V is (batch_size, max_length, units)
-        score = self.V(tf.nn.tanh(att_features))
+        if self.params["is_coverage"] and coverage is not None:  # non-first step of coverage
+            # Multiply coverage vector by w_c to get coverage_features.
+            # Calculate v^T tanh(W_h h_i + W_s s_t + w_c c_i^t + b_attn)
+            e = tf.reduce_sum(self.V(tf.nn.tanh(self.W_s(enc_output) +
+                                                self.W_h(hidden_with_time_axis) +
+                                                self.W_c(coverage))))  # shape (batch_size,attn_length)
 
-        # attention_weights shape == (batch_size, max_length, 1)
-        attention_weights = tf.nn.softmax(score, axis=1)
+            # Calculate attention distribution
+            attn_dist = masked_attention(e)
+
+            # Update coverage vector
+            coverage += attn_dist
+
+        else:
+            # Calculate v^T tanh(W_h h_i + W_s s_t + b_attn)
+            e = tf.reduce_sum(self.V(tf.nn.tanh(self.W_s(enc_output) + self.W_h(hidden_with_time_axis))))
+
+            # Calculate attention distribution
+            attn_dist = masked_attention(e)
+
+            if self.params["is_coverage"]:  # first step of training
+                coverage = tf.expand_dims(tf.expand_dims(attn_dist, 2), 2)  # initialize coverage
 
         # context_vector shape after sum == (batch_size, hidden_size)
-        context_vector = attention_weights * enc_output
+        context_vector = attn_dist * enc_output
         context_vector = tf.reduce_sum(context_vector, axis=1)
 
-        if self.params["is_coverage"]:
-            coverage = coverage + attention_weights
-        return context_vector, tf.squeeze(attention_weights, -1)
+        return context_vector, attn_dist, coverage
 
 
 class Decoder(tf.keras.layers.Layer):

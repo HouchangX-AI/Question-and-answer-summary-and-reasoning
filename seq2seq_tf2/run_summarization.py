@@ -3,7 +3,7 @@ import argparse
 import os
 import pathlib
 from seq2seq_tf2.train import train
-from seq2seq_tf2.test import test
+from seq2seq_tf2.test import test, test_and_save
 from utils.log_utils import define_logger
 from seq2seq_tf2 import config
 
@@ -14,7 +14,7 @@ def main():
     parser.add_argument("--max_dec_len", default=100, help="Decoder input max sequence length", type=int)
     parser.add_argument("--max_dec_steps", default=120, help="maximum number of words of the predicted abstract", type=int)
     parser.add_argument("--min_dec_steps", default=30, help="Minimum number of words of the predicted abstract", type=int)
-    parser.add_argument("--batch_size", default=16, help="batch size", type=int)
+    parser.add_argument("--batch_size", default=3, help="batch size", type=int)
     parser.add_argument("--beam_size", default=3,
                         help="beam size for beam search decoding (must be equal to batch size in decode mode)",
                         type=int)
@@ -29,7 +29,7 @@ def main():
     parser.add_argument("--checkpoints_save_steps", default=10, help="Save checkpoints every N steps", type=int)
     parser.add_argument("--max_steps", default=10000, help="Max number of iterations", type=int)
     parser.add_argument("--num_to_test", default=5, help="Number of examples to test", type=int)
-    parser.add_argument("--mode", default='train', help="training, eval or test options")
+    parser.add_argument("--mode", default='test', help="training, eval or test options")
     parser.add_argument("--pointer_gen", default=True, help="training, eval or test options")
     parser.add_argument("--is_coverage", default=False, help="is_coverage")
 
@@ -39,13 +39,16 @@ def main():
     train_seg_path_y = os.path.join(output_dir, 'train_set.seg_y.txt')
     test_seg_path_x = os.path.join(output_dir, 'test_set.seg_x.txt')
     vocab_path = os.path.join(output_dir, 'vocab.txt')
+    test_save_dir = os.path.join(output_dir, 'test_result.txt')
 
     parser.add_argument("--model_dir", default='./ckpt', help="Model folder")
+    parser.add_argument("--model_path", help="Path to a specific model", default="", type=str)
     parser.add_argument("--train_seg_x_dir", default=train_seg_path_x, help="train_seg_x_dir")
     parser.add_argument("--train_seg_y_dir", default=train_seg_path_y, help="train_seg_y_dir")
     parser.add_argument("--test_seg_x_dir", default=test_seg_path_x, help="test_seg_x_dir")
     parser.add_argument("--vocab_path", default=vocab_path, help="Vocab path")
     parser.add_argument("--log_file", help="File in which to redirect console outputs", default="", type=str)
+    parser.add_argument("--test_save_dir", default=test_save_dir, help="test_save_dir")
 
     args = parser.parse_args()
     params = vars(args)
@@ -55,7 +58,7 @@ def main():
         train(params)
 
     elif params["mode"] == "test":
-        test(params)
+        test_and_save(params)
 
 
 if __name__ == '__main__':

@@ -19,27 +19,32 @@ def test(params):
     vocab = Vocab(params["vocab_path"], params["vocab_size"])
 
     print("Creating the batcher ...")
-    b = batcher(params["data_dir"], vocab, params)
+    b = batcher(params["test_seg_x_dir"], vocab, params)
 
     print("Creating the checkpoint manager")
-    checkpoint_dir = "{}".format(params["checkpoint_dir"])
+    checkpoint_dir = "{}".format(params["model_dir"])
     ckpt = tf.train.Checkpoint(step=tf.Variable(0), PGN=model)
     ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir, max_to_keep=11)
 
     path = params["model_path"] if params["model_path"] else ckpt_manager.latest_checkpoint
     ckpt.restore(path)
     print("Model restored")
-
+    # return 1
+    print('b is ', b)
     for batch in b:
+        print('batch', batch)
         yield beam_decode(model, batch, vocab, params)
 
 
 def test_and_save(params):
     assert params["test_save_dir"], "provide a dir where to save the results"
     gen = test(params)
+    print('gen is ', gen)
     with tqdm(total=params["num_to_test"], position=0, leave=True) as pbar:
         for i in range(params["num_to_test"]):
+            print('i', i)
             trial = next(gen)
+            print('trial is', trial)
             with open(params["test_save_dir"] + "/article_" + str(i) + ".txt", "w") as f:
                 f.write("article:\n")
                 f.write(trial.text)

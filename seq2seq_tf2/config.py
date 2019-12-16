@@ -14,6 +14,7 @@ test_path = os.path.join(output_dir, 'AutoMaster_TestSet.csv')
 # paddle_train config
 save_vocab_path = os.path.join(output_dir, 'vocab.txt')
 model_save_dir = os.path.join(output_dir, 'paddle_model')
+test_save_dir = os.path.join(output_dir, 'test_result')
 
 vocab_max_size = 7000
 vocab_min_count = 5

@@ -20,7 +20,7 @@ def train(params):
     print('vocab is ', vocab)
 
     print("Creating the batcher ...")
-    b = batcher(params["train_seg_x_dir"], params["train_seg_y_dir"], vocab, params)
+    b = batcher((params["train_seg_x_dir"], params["train_seg_y_dir"]), vocab, params)
 
     print("Creating the checkpoint manager")
     checkpoint_dir = "{}/checkpoint".format(params["model_dir"])

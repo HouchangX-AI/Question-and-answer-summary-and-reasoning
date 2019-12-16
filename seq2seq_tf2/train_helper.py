@@ -20,20 +20,52 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
 
         return tf.reduce_mean(loss_)
 
+    def _mask_and_avg(values, padding_mask):
+        """Applies mask to values then returns overall average (a scalar)
+        Args:
+          values: a list length max_dec_steps containing arrays shape (batch_size).
+          padding_mask: tensor shape (batch_size, max_dec_steps) containing 1s and 0s.
+        Returns:
+          a scalar
+        """
+
+        dec_lens = tf.reduce_sum(padding_mask, axis=1)  # shape batch_size. float32
+        values_per_step = [v * padding_mask[:, dec_step] for dec_step, v in enumerate(values)]
+        values_per_ex = sum(values_per_step) / dec_lens  # shape (batch_size); normalized value for each batch member
+        return tf.reduce_mean(values_per_ex)  # overall average
+
+    def _coverage_loss(attn_dists, padding_mask):
+        """Calculates the coverage loss from the attention distributions.
+        Args:
+          attn_dists: The attention distributions for each decoder timestep.
+          A list length max_dec_steps containing shape (batch_size, attn_length)
+          padding_mask: shape (batch_size, max_dec_steps).
+        Returns:
+          coverage_loss: scalar
+        """
+        coverage = tf.zeros_like(attn_dists[0])  # shape (batch_size, attn_length). Initial coverage is zero.
+        covlosses = []  # Coverage loss per decoder timestep. Will be list length max_dec_steps containing shape (batch_size).
+        for a in attn_dists:
+            covloss = tf.reduce_sum(tf.minimum(a, coverage), [1])  # calculate the coverage loss for this step
+            covlosses.append(covloss)
+            coverage += a  # update the coverage vector
+        coverage_loss = _mask_and_avg(covlosses, padding_mask)
+        return coverage_loss
+
     @tf.function(input_signature=(tf.TensorSpec(shape=[params["batch_size"], None], dtype=tf.int32),
                                   tf.TensorSpec(shape=[params["batch_size"], None], dtype=tf.int32),
                                   tf.TensorSpec(shape=[params["batch_size"], params["max_dec_len"]], dtype=tf.int32),
                                   tf.TensorSpec(shape=[params["batch_size"], params["max_dec_len"]], dtype=tf.int32),
                                   tf.TensorSpec(shape=[], dtype=tf.int32)))
-    def train_step(enc_inp, enc_extended_inp, dec_inp, dec_tar, batch_oov_len):
+    def train_step(enc_inp, enc_extended_inp, dec_inp, dec_tar, batch_oov_len, cov_loss_wt):
         loss = 0
         with tf.GradientTape() as tape:
             enc_hidden, enc_output = model.call_encoder(enc_inp)
+            if params["is_coverage"]:
+                predictions, _ = model(enc_output, enc_hidden, enc_inp, enc_extended_inp, dec_inp, batch_oov_len)
+                loss = loss_function(dec_tar, predictions) + cov_loss_wt * _coverage_loss(attentions, padding_mask)
             predictions, _ = model(enc_output, enc_hidden, enc_inp, enc_extended_inp, dec_inp, batch_oov_len)
             loss = loss_function(dec_tar, predictions)
-            # if params["is_coverage"]:
-            #     step_coverage_loss = tf.math.reduce_sum(tf.math.minimum(attn_dist, coverage), 1)
-            #     loss = loss + cov_loss_wt * step_coverage_loss
 
         variables = model.encoder.trainable_variables +\
                     model.attention.trainable_variables +\

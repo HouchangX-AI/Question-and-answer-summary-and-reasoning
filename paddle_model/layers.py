@@ -113,6 +113,8 @@ class Decoder(tf.keras.layers.Layer):
                                            return_sequences=True,
                                            return_state=True,
                                            recurrent_initializer='glorot_uniform')
+        self.fc = tf.keras.layers.Dropout(0.5)
+
         self.fc = tf.keras.layers.Dense(vocab_size, activation=tf.keras.activations.softmax)
         # self.fc = tf.keras.layers.Dropout(0.5)
 

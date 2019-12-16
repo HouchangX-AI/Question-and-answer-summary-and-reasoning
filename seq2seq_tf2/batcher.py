@@ -144,21 +144,29 @@ def get_dec_inp_targ_seqs(sequence, max_len, start_id, stop_id):
     return inp, target
 
 
-def example_generator(filenames_1, filenames_2, vocab, max_enc_len, max_dec_len, mode, batch_size):
-    dataset_1 = tf.data.TextLineDataset(filenames_1)
+def example_generator(filenames, vocab, max_enc_len, max_dec_len, mode, batch_size):
+    # filenames_1, filenames_2 = filenames
+    # dataset_1 = tf.data.TextLineDataset(filenames_1)
     # print('dataset_1 is ', dataset_1)
-    dataset_2 = tf.data.TextLineDataset(filenames_2)
+    # dataset_2 = tf.data.TextLineDataset(filenames_2)
 
-    train_dataset = tf.data.Dataset.zip((dataset_1, dataset_2))
+    # train_dataset = tf.data.Dataset.zip((dataset_1, dataset_2))
+    train_dataset = tf.data.TextLineDataset(filenames)
+    print('train_dataset', train_dataset)
     if mode == "train":
         train_dataset = train_dataset.shuffle(1000, reshuffle_each_iteration=True).repeat()
 
     n = 0
     for raw_record in train_dataset:
+        print('raw_record is', raw_record)
+        n += 1
+        if n == 1000:
+            break
         # print('n is ', n)
         article = raw_record[0].numpy().decode("utf-8")
-        # print('article is ', article)
+        print('article is ', article)
         abstract = raw_record[1].numpy().decode("utf-8")
+        print('abstract is ', abstract)
 
         start_decoding = vocab.word_to_id(START_DECODING)
         stop_decoding = vocab.word_to_id(STOP_DECODING)
@@ -197,8 +205,8 @@ def example_generator(filenames_1, filenames_2, vocab, max_enc_len, max_dec_len,
             yield output
 
 
-def batch_generator(generator, filenames_1, filenames_2, vocab, max_enc_len, max_dec_len, batch_size, mode):
-    dataset = tf.data.Dataset.from_generator(lambda: generator(filenames_1, filenames_2, vocab, max_enc_len, max_dec_len, mode, batch_size),
+def batch_generator(generator, filenames, vocab, max_enc_len, max_dec_len, batch_size, mode):
+    dataset = tf.data.Dataset.from_generator(lambda: generator(filenames, vocab, max_enc_len, max_dec_len, mode, batch_size),
                                              output_types={
                                                  "enc_len": tf.int32,
                                                  "enc_input": tf.int32,
@@ -264,8 +272,8 @@ def batch_generator(generator, filenames_1, filenames_2, vocab, max_enc_len, max
     return dataset
 
 
-def batcher(filenames_1, filenames_2, vocab, hpm):
-    dataset = batch_generator(example_generator, filenames_1, filenames_2, vocab, hpm["max_enc_len"],
+def batcher(filenames, vocab, hpm):
+    dataset = batch_generator(example_generator, filenames, vocab, hpm["max_enc_len"],
                               hpm["max_dec_len"], hpm["batch_size"], hpm["mode"])
     return dataset
 
