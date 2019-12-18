@@ -15,17 +15,11 @@ class Encoder(tf.keras.layers.Layer):
                                                    trainable=False)
         gpus = tf.config.experimental.list_physical_devices('GPU')
         print('gpus number is ', gpus)
-        if gpus:
-            self.gru = tf.keras.layers.CuDNNGRU(self.enc_units,
-                                                return_sequences=True,
-                                                return_state=True,
-                                                recurrent_initializer='glorot_uniform')
-        else:
-            self.gru = tf.keras.layers.GRU(self.enc_units,
-                                           return_sequences=True,
-                                           return_state=True,
-                                           recurrent_initializer='glorot_uniform')
-            self.bigru = tf.keras.layers.Bidirectional(self.gru, merge_mode='concat')
+        self.gru = tf.keras.layers.GRU(self.enc_units,
+                                       return_sequences=True,
+                                       return_state=True,
+                                       recurrent_initializer='glorot_uniform')
+        self.bigru = tf.keras.layers.Bidirectional(self.gru, merge_mode='concat')
 
     def call(self, x, hidden):
         x = self.embedding(x)
@@ -37,20 +31,18 @@ class Encoder(tf.keras.layers.Layer):
         return output, state
 
     def initialize_hidden_state(self):
-        return tf.zeros((self.batch_sz, 2*self.enc_units))
+        return tf.zeros((self.batch_sz, self.enc_units))
 
 
 class BahdanauAttention(tf.keras.layers.Layer):
-    def __init__(self, params):
+    def __init__(self, units):
         super(BahdanauAttention, self).__init__()
-        self.params = params
-        if self.params["is_coverage"]:
-            self.Wc = tf.keras.layers.Dense(self.params["attn_units"])
-        self.W1 = tf.keras.layers.Dense(self.params["attn_units"])
-        self.W2 = tf.keras.layers.Dense(self.params["attn_units"])
+        self.Wc = tf.keras.layers.Dense(units)
+        self.W1 = tf.keras.layers.Dense(units)
+        self.W2 = tf.keras.layers.Dense(units)
         self.V = tf.keras.layers.Dense(1)
 
-    def call(self, dec_hidden, enc_output, enc_padding_mask, coverage=0):
+    def call(self, dec_hidden, enc_output, enc_padding_mask, use_coverage, coverage=0):
         """
         dec_hidden:
         """
@@ -67,7 +59,7 @@ class BahdanauAttention(tf.keras.layers.Layer):
             masked_sums = tf.reduce_sum(attn_dist, axis=1)  # shape (batch_size)
             return attn_dist / tf.reshape(masked_sums, [-1, 1])  # re-normalize
 
-        if self.params["is_coverage"] and coverage is not None:  # non-first step of coverage
+        if use_coverage and coverage is not None:  # non-first step of coverage
             # Multiply coverage vector by w_c to get coverage_features.
             # Calculate v^T tanh(W_h h_i + W_s s_t + w_c c_i^t + b_attn)
             e = tf.reduce_sum(self.V(tf.nn.tanh(self.W_s(enc_output) +
@@ -87,8 +79,8 @@ class BahdanauAttention(tf.keras.layers.Layer):
             # Calculate attention distribution
             attn_dist = masked_attention(e)
 
-            if self.params["is_coverage"]:  # first step of training
-                coverage = tf.expand_dims(tf.expand_dims(attn_dist, 2), 2)  # initialize coverage
+            if use_coverage:  # first step of training
+                coverage = attn_dist  # initialize coverage
 
         # context_vector shape after sum == (batch_size, hidden_size)
         context_vector = attn_dist * enc_output
@@ -105,22 +97,15 @@ class Decoder(tf.keras.layers.Layer):
         self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim,
                                                    weights=[embedding_matrix],
                                                    trainable=False)
-        gpus = tf.config.experimental.list_physical_devices('GPU')
-        if gpus:
-            self.gru = tf.keras.layers.CuDNNGRU(self.enc_units,
-                                                return_sequences=True,
-                                                return_state=True,
-                                                recurrent_initializer='glorot_uniform')
-        else:
-            self.gru = tf.keras.layers.GRU(self.dec_units,
-                                           return_sequences=True,
-                                           return_state=True,
-                                           recurrent_initializer='glorot_uniform')
+        self.gru = tf.keras.layers.GRU(self.dec_units,
+                                       return_sequences=True,
+                                       return_state=True,
+                                       recurrent_initializer='glorot_uniform')
         self.fc = tf.keras.layers.Dropout(0.5)
         self.fc = tf.keras.layers.Dense(vocab_size, activation=tf.keras.activations.softmax)
 
-    # def call(self, x, hidden, enc_output, context_vector):
-    def call(self, x, context_vector):
+    def call(self, x, hidden, enc_output, context_vector):
+    # def call(self, x, context_vector):
 
         # enc_output shape == (batch_size, max_length, hidden_size)
 
