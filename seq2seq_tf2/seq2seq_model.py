@@ -26,27 +26,31 @@ class PGN(tf.keras.Model):
         enc_output, enc_hidden = self.encoder(enc_inp, enc_hidden)
         return enc_hidden, enc_output
 
-    def call(self, enc_output, dec_hidden, enc_inp, enc_extended_inp, dec_inp, batch_oov_len, enc_padding_mask, use_coverage=True, coverage=None):
+    def call(self, enc_output, dec_hidden, enc_inp,
+             enc_extended_inp, dec_inp, batch_oov_len,
+             enc_padding_mask, use_coverage=True, prev_coverage=None):
         predictions = []
         attentions = []
         coverages = []
         p_gens = []
 
-        context_vector,  attn_dist, coverage_next = self.attention(dec_hidden,
-                                                                   enc_output,
-                                                                   enc_padding_mask,
-                                                                   use_coverage,
-                                                                   coverage)
+        context_vector, attn_dist, coverage_next = self.attention(dec_hidden,
+                                                                  enc_output,
+                                                                  enc_padding_mask,
+                                                                  use_coverage,
+                                                                  prev_coverage)
 
         if self.params["pointer_gen"]:
             for t in range(dec_inp.shape[1]):
-                dec_x, pred, dec_hidden = self.decoder(tf.expand_dims(dec_inp[:, t], 1), dec_hidden, enc_output,
+                dec_x, pred, dec_hidden = self.decoder(tf.expand_dims(dec_inp[:, t], 1),
+                                                       dec_hidden,
+                                                       enc_output,
                                                        context_vector)
                 context_vector, attn_dist, coverage_next = self.attention(dec_hidden,
                                                                           enc_output,
                                                                           enc_padding_mask,
                                                                           use_coverage,
-                                                                          coverage)
+                                                                          prev_coverage)
                 p_gen = self.pointer(context_vector, dec_hidden, tf.squeeze(dec_x, axis=1))
 
                 predictions.append(pred)
