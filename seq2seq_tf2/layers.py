@@ -15,6 +15,7 @@ class Encoder(tf.keras.layers.Layer):
                                                    trainable=False)
         gpus = tf.config.experimental.list_physical_devices('GPU')
         print('gpus number is ', gpus)
+        # tf.keras.layers.GRU自动匹配cpu、gpu
         self.gru = tf.keras.layers.GRU(self.enc_units,
                                        return_sequences=True,
                                        return_state=True,
@@ -42,7 +43,7 @@ class BahdanauAttention(tf.keras.layers.Layer):
         self.W2 = tf.keras.layers.Dense(units)
         self.V = tf.keras.layers.Dense(1)
 
-    def call(self, dec_hidden, enc_output, enc_padding_mask, use_coverage, coverage=0):
+    def call(self, dec_hidden, enc_output, enc_padding_mask, use_coverage, prev_coverage):
         """
         dec_hidden:
         """
@@ -52,25 +53,33 @@ class BahdanauAttention(tf.keras.layers.Layer):
         hidden_with_time_axis = tf.expand_dims(dec_hidden, 1)
         # att_features = self.W1(enc_output) + self.W2(hidden_with_time_axis)
 
-        def masked_attention(e):
-            """Take softmax of e then apply enc_padding_mask and re-normalize"""
-            attn_dist = tf.nn.softmax(e)  # take softmax. shape (batch_size, attn_length)
-            attn_dist *= enc_padding_mask  # apply mask
-            masked_sums = tf.reduce_sum(attn_dist, axis=1)  # shape (batch_size)
-            return attn_dist / tf.reshape(masked_sums, [-1, 1])  # re-normalize
+        # def masked_attention(e):
+        #     """Take softmax of e then apply enc_padding_mask and re-normalize"""
+        #     attn_dist = tf.nn.softmax(e)  # take softmax. shape (batch_size, attn_length)
+        #     attn_dist *= enc_padding_mask  # apply mask
+        #     masked_sums = tf.reduce_sum(attn_dist, axis=1)  # shape (batch_size)
+        #     return attn_dist / tf.reshape(masked_sums, [-1, 1])  # re-normalize
 
-        if use_coverage and coverage is not None:  # non-first step of coverage
+        def masked_attention(e):
+            mask = tf.cast(enc_padding_mask, dtype=e.dtype)
+            masked_score = tf.squeeze(e, axis=-1) * mask
+            masked_score = tf.expand_dims(masked_score, axis=2)
+            attention_weights = tf.nn.softmax(masked_score, axis=1)
+
+            return attention_weights
+
+        if use_coverage and prev_coverage is not None:  # non-first step of coverage
             # Multiply coverage vector by w_c to get coverage_features.
             # Calculate v^T tanh(W_h h_i + W_s s_t + w_c c_i^t + b_attn)
             e = tf.reduce_sum(self.V(tf.nn.tanh(self.W_s(enc_output) +
                                                 self.W_h(hidden_with_time_axis) +
-                                                self.W_c(coverage))))  # shape (batch_size,attn_length)
+                                                self.W_c(prev_coverage))))  # shape (batch_size,attn_length)
 
             # Calculate attention distribution
             attn_dist = masked_attention(e)
 
             # Update coverage vector
-            coverage += attn_dist
+            coverage = attn_dist + prev_coverage
 
         else:
             # Calculate v^T tanh(W_h h_i + W_s s_t + b_attn)
@@ -86,7 +95,7 @@ class BahdanauAttention(tf.keras.layers.Layer):
         context_vector = attn_dist * enc_output
         context_vector = tf.reduce_sum(context_vector, axis=1)
 
-        return context_vector, attn_dist, coverage
+        return context_vector, tf.squeeze(attn_dist, -1), coverage
 
 
 class Decoder(tf.keras.layers.Layer):

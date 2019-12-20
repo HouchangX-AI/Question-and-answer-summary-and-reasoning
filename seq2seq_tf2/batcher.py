@@ -173,6 +173,9 @@ def example_generator(filenames, vocab, max_enc_len, max_dec_len, mode, batch_si
 
         article_words = article.split()[:max_enc_len]
         enc_len = len(article_words)
+        # 添加mark标记
+        sample_encoder_pad_mask = [1 for _ in range(enc_len)]
+
         enc_input = [vocab.word_to_id(w) for w in article_words]
         enc_input_extend_vocab, article_oovs = article_to_ids(article_words, vocab)
 
@@ -184,6 +187,8 @@ def example_generator(filenames, vocab, max_enc_len, max_dec_len, mode, batch_si
         _, target = get_dec_inp_targ_seqs(abs_ids_extend_vocab, max_dec_len, start_decoding, stop_decoding)
 
         dec_len = len(dec_input)
+        # 添加mark标记
+        sample_decoder_pad_mask = [1 for _ in range(dec_len)]
 
         output = {
             "enc_len": enc_len,
@@ -195,7 +200,9 @@ def example_generator(filenames, vocab, max_enc_len, max_dec_len, mode, batch_si
             "dec_len": dec_len,
             "article": article,
             "abstract": abstract,
-            "abstract_sents": abstract_sentences
+            "abstract_sents": abstract_sentences,
+            "sample_decoder_pad_mask": sample_decoder_pad_mask,
+            "sample_encoder_pad_mask": sample_encoder_pad_mask,
         }
 
         if mode == "test":
@@ -217,7 +224,9 @@ def batch_generator(generator, filenames, vocab, max_enc_len, max_dec_len, batch
                                                  "dec_len": tf.int32,
                                                  "article": tf.string,
                                                  "abstract": tf.string,
-                                                 "abstract_sents": tf.string
+                                                 "abstract_sents": tf.string,
+                                                 "sample_decoder_pad_mask": tf.int32,
+                                                 "sample_encoder_pad_mask": tf.int32,
                                              },
                                              output_shapes={
                                                  "enc_len": [],
@@ -229,7 +238,9 @@ def batch_generator(generator, filenames, vocab, max_enc_len, max_dec_len, batch
                                                  "dec_len": [],
                                                  "article": [],
                                                  "abstract": [],
-                                                 "abstract_sents": [None]
+                                                 "abstract_sents": [None],
+                                                 "sample_decoder_pad_mask": [None],
+                                                 "sample_encoder_pad_mask": [None],
                                              })
 
     dataset = dataset.padded_batch(batch_size,
@@ -242,7 +253,9 @@ def batch_generator(generator, filenames, vocab, max_enc_len, max_dec_len, batch
                                                    "dec_len": [],
                                                    "article": [],
                                                    "abstract": [],
-                                                   "abstract_sents": [None]}),
+                                                   "abstract_sents": [None],
+                                                   "sample_decoder_pad_mask": [max_dec_len],
+                                                   "sample_encoder_pad_mask": [None]}),
                                    padding_values={"enc_len": -1,
                                                    "enc_input": 1,
                                                    "enc_input_extend_vocab": 1,
@@ -252,7 +265,9 @@ def batch_generator(generator, filenames, vocab, max_enc_len, max_dec_len, batch
                                                    "dec_len": -1,
                                                    "article": b'',
                                                    "abstract": b'',
-                                                   "abstract_sents": b''},
+                                                   "abstract_sents": b'',
+                                                   "sample_decoder_pad_mask": 0,
+                                                   "sample_encoder_pad_mask": 0},
                                    drop_remainder=True)
 
     def update(entry):
@@ -261,12 +276,14 @@ def batch_generator(generator, filenames, vocab, max_enc_len, max_dec_len, batch
                  "article_oovs": entry["article_oovs"],
                  "enc_len": entry["enc_len"],
                  "article": entry["article"],
-                 "max_oov_len": tf.shape(entry["article_oovs"])[1]},
+                 "max_oov_len": tf.shape(entry["article_oovs"])[1],
+                 "sample_encoder_pad_mask": entry["sample_encoder_pad_mask"]},
 
                 {"dec_input": entry["dec_input"],
                  "dec_target": entry["target"],
                  "dec_len": entry["dec_len"],
-                 "abstract": entry["abstract"]})
+                 "abstract": entry["abstract"],
+                 "sample_decoder_pad_mask": entry["sample_decoder_pad_mask"]})
 
     dataset = dataset.map(update)
     return dataset
