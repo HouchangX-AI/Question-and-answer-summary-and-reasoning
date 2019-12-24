@@ -144,76 +144,88 @@ def get_dec_inp_targ_seqs(sequence, max_len, start_id, stop_id):
     return inp, target
 
 
-def example_generator(filenames, vocab, max_enc_len, max_dec_len, mode, batch_size):
-    # filenames_1, filenames_2 = filenames
-    # dataset_1 = tf.data.TextLineDataset(filenames_1)
-    # print('dataset_1 is ', dataset_1)
-    # dataset_2 = tf.data.TextLineDataset(filenames_2)
+def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_len, max_dec_len, mode, batch_size):
 
-    # train_dataset = tf.data.Dataset.zip((dataset_1, dataset_2))
-    train_dataset = tf.data.TextLineDataset(filenames)
-    print('train_dataset', train_dataset)
     if mode == "train":
-        train_dataset = train_dataset.shuffle(1000, reshuffle_each_iteration=True).repeat()
+        dataset_train_x = tf.data.TextLineDataset(train_x_path)
+        dataset_train_y = tf.data.TextLineDataset(train_y_path)
+        train_dataset = tf.data.Dataset.zip((dataset_train_x, dataset_train_y))
+        train_dataset = train_dataset.shuffle(10, reshuffle_each_iteration=True).repeat()
 
-    n = 0
-    for raw_record in train_dataset:
-        print('raw_record is', raw_record)
-        n += 1
-        if n == 1000:
-            break
-        # print('n is ', n)
-        article = raw_record[0].numpy().decode("utf-8")
-        print('article is ', article)
-        abstract = raw_record[1].numpy().decode("utf-8")
-        print('abstract is ', abstract)
+        for raw_record in train_dataset:
+            article = raw_record[0].numpy().decode("utf-8")
+            abstract = raw_record[1].numpy().decode("utf-8")
 
-        start_decoding = vocab.word_to_id(START_DECODING)
-        stop_decoding = vocab.word_to_id(STOP_DECODING)
+            start_decoding = vocab.word_to_id(START_DECODING)
+            stop_decoding = vocab.word_to_id(STOP_DECODING)
 
-        article_words = article.split()[:max_enc_len]
-        enc_len = len(article_words)
-        # 添加mark标记
-        sample_encoder_pad_mask = [1 for _ in range(enc_len)]
+            article_words = article.split()[:max_enc_len]
+            enc_len = len(article_words)
+            # 添加mark标记
+            sample_encoder_pad_mask = [1 for _ in range(enc_len)]
 
-        enc_input = [vocab.word_to_id(w) for w in article_words]
-        enc_input_extend_vocab, article_oovs = article_to_ids(article_words, vocab)
+            enc_input = [vocab.word_to_id(w) for w in article_words]
+            enc_input_extend_vocab, article_oovs = article_to_ids(article_words, vocab)
 
-        abstract_sentences = [""]
-        abstract_words = abstract.split()
-        abs_ids = [vocab.word_to_id(w) for w in abstract_words]
-        abs_ids_extend_vocab = abstract_to_ids(abstract_words, vocab, article_oovs)
-        dec_input, target = get_dec_inp_targ_seqs(abs_ids, max_dec_len, start_decoding, stop_decoding)
-        _, target = get_dec_inp_targ_seqs(abs_ids_extend_vocab, max_dec_len, start_decoding, stop_decoding)
+            abstract_sentences = [""]
+            abstract_words = abstract.split()
+            abs_ids = [vocab.word_to_id(w) for w in abstract_words]
+            abs_ids_extend_vocab = abstract_to_ids(abstract_words, vocab, article_oovs)
+            dec_input, target = get_dec_inp_targ_seqs(abs_ids, max_dec_len, start_decoding, stop_decoding)
+            _, target = get_dec_inp_targ_seqs(abs_ids_extend_vocab, max_dec_len, start_decoding, stop_decoding)
 
-        dec_len = len(dec_input)
-        # 添加mark标记
-        sample_decoder_pad_mask = [1 for _ in range(dec_len)]
+            dec_len = len(dec_input)
+            # 添加mark标记
+            sample_decoder_pad_mask = [1 for _ in range(dec_len)]
 
-        output = {
-            "enc_len": enc_len,
-            "enc_input": enc_input,
-            "enc_input_extend_vocab": enc_input_extend_vocab,
-            "article_oovs": article_oovs,
-            "dec_input": dec_input,
-            "target": target,
-            "dec_len": dec_len,
-            "article": article,
-            "abstract": abstract,
-            "abstract_sents": abstract_sentences,
-            "sample_decoder_pad_mask": sample_decoder_pad_mask,
-            "sample_encoder_pad_mask": sample_encoder_pad_mask,
-        }
+            output = {
+                "enc_len": enc_len,
+                "enc_input": enc_input,
+                "enc_input_extend_vocab": enc_input_extend_vocab,
+                "article_oovs": article_oovs,
+                "dec_input": dec_input,
+                "target": target,
+                "dec_len": dec_len,
+                "article": article,
+                "abstract": abstract,
+                "abstract_sents": abstract_sentences,
+                "sample_decoder_pad_mask": sample_decoder_pad_mask,
+                "sample_encoder_pad_mask": sample_encoder_pad_mask,
+            }
 
-        if mode == "test":
-            for _ in range(batch_size):
-                yield output
-        else:
             yield output
 
+    if mode == "test":
+        test_dataset = tf.data.TextLineDataset(test_x_path)
+        for raw_record in test_dataset:
+            article = raw_record.numpy().decode("utf-8")
+            article_words = article.split()[:max_enc_len]
+            enc_len = len(article_words)
 
-def batch_generator(generator, filenames, vocab, max_enc_len, max_dec_len, batch_size, mode):
-    dataset = tf.data.Dataset.from_generator(lambda: generator(filenames, vocab, max_enc_len, max_dec_len, mode, batch_size),
+            enc_input = [vocab.word_to_id(w) for w in article_words]
+            enc_input_extend_vocab, article_oovs = article_to_ids(article_words, vocab)
+
+            output = {
+                "enc_len": enc_len,
+                "enc_input": enc_input,
+                "enc_input_extend_vocab": enc_input_extend_vocab,
+                "article_oovs": article_oovs,
+                "dec_input": [],
+                "target": [],
+                "dec_len": 40,
+                "article": article,
+                "abstract": '',
+                "abstract_sents": '',
+                "sample_decoder_pad_mask": [],
+                "sample_encoder_pad_mask": [],
+            }
+
+            for _ in range(batch_size):
+                yield output
+
+
+def batch_generator(generator, vocab, train_x_path, train_y_path, test_x_path, max_enc_len, max_dec_len, batch_size, mode):
+    dataset = tf.data.Dataset.from_generator(lambda: generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_len, max_dec_len, mode, batch_size),
                                              output_types={
                                                  "enc_len": tf.int32,
                                                  "enc_input": tf.int32,
@@ -289,11 +301,12 @@ def batch_generator(generator, filenames, vocab, max_enc_len, max_dec_len, batch
     return dataset
 
 
-def batcher(filenames, vocab, hpm):
-    dataset = batch_generator(example_generator, filenames, vocab, hpm["max_enc_len"],
+def batcher(vocab, hpm):
+    dataset = batch_generator(example_generator, vocab, hpm["train_seg_x_dir"], hpm["train_seg_y_dir"],
+                              hpm["test_seg_x_dir"], hpm["max_enc_len"],
                               hpm["max_dec_len"], hpm["batch_size"], hpm["mode"])
     return dataset
 
 
 if __name__ == '__main__':
-    b = batcher(config.train_seg_path_x, config.train_seg_path_y, config.vocab_path)
+    pass
