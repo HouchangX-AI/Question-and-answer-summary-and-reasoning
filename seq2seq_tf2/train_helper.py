@@ -72,6 +72,13 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
         # loss = 0
         with tf.GradientTape() as tape:
             enc_hidden, enc_output = model.call_encoder(enc_inp)
+            print('enc_output is ', enc_output)
+            print('enc_hidden is ', enc_hidden)
+            print('enc_inp is ', enc_inp)
+            print('enc_extended_inp is ', enc_extended_inp)
+            print('dec_inp is ', dec_inp)
+            print('batch_oov_len is ', batch_oov_len)
+            print('enc_padding_mask is ', enc_padding_mask)
             predictions, _, attentions, coverages = model(enc_output, enc_hidden, enc_inp, enc_extended_inp,
                                                           dec_inp, batch_oov_len, enc_padding_mask,
                                                           params['is_coverage'], prev_coverage=None)

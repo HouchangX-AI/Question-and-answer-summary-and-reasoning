@@ -205,6 +205,8 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
             enc_input = [vocab.word_to_id(w) for w in article_words]
             enc_input_extend_vocab, article_oovs = article_to_ids(article_words, vocab)
 
+            sample_encoder_pad_mask = [1 for _ in range(enc_len)]
+
             output = {
                 "enc_len": enc_len,
                 "enc_input": enc_input,
@@ -215,9 +217,9 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
                 "dec_len": 40,
                 "article": article,
                 "abstract": '',
-                "abstract_sents": '',
+                "abstract_sents": [],
                 "sample_decoder_pad_mask": [],
-                "sample_encoder_pad_mask": [],
+                "sample_encoder_pad_mask": sample_encoder_pad_mask,
             }
 
             for _ in range(batch_size):
@@ -278,8 +280,8 @@ def batch_generator(generator, vocab, train_x_path, train_y_path, test_x_path, m
                                                    "article": b'',
                                                    "abstract": b'',
                                                    "abstract_sents": b'',
-                                                   "sample_decoder_pad_mask": 0,
-                                                   "sample_encoder_pad_mask": 0},
+                                                   "sample_decoder_pad_mask": 1,
+                                                   "sample_encoder_pad_mask": 1},
                                    drop_remainder=True)
 
     def update(entry):
@@ -305,6 +307,7 @@ def batcher(vocab, hpm):
     dataset = batch_generator(example_generator, vocab, hpm["train_seg_x_dir"], hpm["train_seg_y_dir"],
                               hpm["test_seg_x_dir"], hpm["max_enc_len"],
                               hpm["max_dec_len"], hpm["batch_size"], hpm["mode"])
+
     return dataset
 
 
