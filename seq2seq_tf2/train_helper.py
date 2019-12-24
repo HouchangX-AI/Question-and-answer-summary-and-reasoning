@@ -17,7 +17,7 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
         loss_ *= mask
         # we have to make sure no empty abstract is being used otherwise dec_lens may contain null values
         loss_ = tf.reduce_sum(loss_, axis=-1) / dec_lens
-        # print('tf.reduce_mean(loss_) is ', tf.reduce_mean(loss_))
+
         return tf.reduce_mean(loss_)
 
     def _mask_and_avg(values, padding_mask):
@@ -30,12 +30,8 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
         """
         # padding_mask is Tensor("Cast_2:0", shape=(64, 400), dtype=float32)
         padding_mask = tf.cast(padding_mask, dtype=values[0].dtype)
-        # print('values is ', values)
-        # print('padding_mask is ', padding_mask)
         dec_lens = tf.reduce_sum(padding_mask, axis=1)  # shape batch_size. float32
-        # print('dec_lens is ', dec_lens)
         values_per_step = [v * padding_mask[:, dec_step] for dec_step, v in enumerate(values)]
-        # print('values_per_step is ', values_per_step)
         values_per_ex = sum(values_per_step) / dec_lens  # shape (batch_size); normalized value for each batch member
         return tf.reduce_mean(values_per_ex)  # overall average
 
@@ -48,25 +44,16 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
         Returns:
           coverage_loss: scalar
         """
-        # print('attn_dists is ', attn_dists)
-        # print('padding_mask is ', padding_mask)
         coverage = tf.zeros_like(attn_dists[0])  # shape (batch_size, attn_length). Initial coverage is zero.
-        # print('coverage is ', coverage)
-        covlosses = []  # Coverage loss per decoder timestep. Will be list length max_dec_steps containing shape (batch_size).
+        # Coverage loss per decoder timestep. Will be list length max_dec_steps containing shape (batch_size).
+        covlosses = []
         for a in attn_dists:
             covloss = tf.reduce_sum(tf.minimum(a, coverage), [1])  # calculate the coverage loss for this step
             covlosses.append(covloss)
             coverage += a  # update the coverage vector
-        # print('covlosses is ', covlosses)
         coverage_loss = _mask_and_avg(covlosses, padding_mask)
-        # print('coverage_loss is ', coverage_loss)
         return coverage_loss
 
-    # @tf.function(input_signature=(tf.TensorSpec(shape=[params["batch_size"], None], dtype=tf.int32),
-    #                               tf.TensorSpec(shape=[params["batch_size"], None], dtype=tf.int32),
-    #                               tf.TensorSpec(shape=[params["batch_size"], params["max_dec_len"]], dtype=tf.int32),
-    #                               tf.TensorSpec(shape=[params["batch_size"], params["max_dec_len"]], dtype=tf.int32),
-    #                               tf.TensorSpec(shape=[], dtype=tf.int32)))
     @tf.function
     def train_step(enc_inp, enc_extended_inp, dec_inp, dec_tar, batch_oov_len, enc_padding_mask, cov_loss_wt):
         # loss = 0
@@ -82,11 +69,8 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
             predictions, _, attentions, coverages = model(enc_output, enc_hidden, enc_inp, enc_extended_inp,
                                                           dec_inp, batch_oov_len, enc_padding_mask,
                                                           params['is_coverage'], prev_coverage=None)
-            # predictions, _ = model(enc_output, enc_hidden, enc_inp, enc_extended_inp, dec_inp, batch_oov_len)
             if params["is_coverage"]:
-                # print('cov_loss_wt * _coverage_loss(attentions, enc_padding_mask) is ', _coverage_loss(attentions, enc_padding_mask))
                 loss = loss_function(dec_tar, predictions) + cov_loss_wt * _coverage_loss(attentions, enc_padding_mask)
-                # print('loss is ', loss)
             else:
                 loss = loss_function(dec_tar, predictions)
 

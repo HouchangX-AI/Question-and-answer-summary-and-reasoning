@@ -1,9 +1,4 @@
-import os
-# from seq2seq_tf2.data_reader import build_dataset, build_test_dataset, load_word_dict, read_vocab, save_word_dict, load_dataset
-from seq2seq_tf2.seq2seq_model import Encoder, Decoder, BahdanauAttention
 import tensorflow as tf
-from seq2seq_tf2 import config
-
 from seq2seq_tf2.seq2seq_model import PGN
 from seq2seq_tf2.batcher import batcher, Vocab
 from seq2seq_tf2.train_helper import train_model
@@ -39,15 +34,3 @@ def train(params):
 if __name__ == '__main__':
     pass
 
-    # _train(src_vocab_size=config.src_vocab_size,
-    #       target_vocab_size=config.target_vocab_size,
-    #       embedding_dim=config.embedding_dim,
-    #       hidden_dim=config.hidden_dim,
-    #       batch_sz=config.batch_sz,
-    #       learning_rate=config.learning_rate,
-    #       log_dir=config.log_dir,
-    #       train_path=config.train_seg_path,
-    #       dataset_size=config.dataset_size,
-    #       epochs=config.epochs,
-    #       steps_per_epoch=config.steps_per_epoch,
-    #       checkpoint_path=config.checkpoint_path)

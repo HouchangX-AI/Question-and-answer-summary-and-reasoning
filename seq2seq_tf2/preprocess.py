@@ -2,10 +2,8 @@ import numpy as np
 import pandas as pd
 import re
 from jieba import posseg
-from seq2seq_tf2 import config
 import jieba
 from utils.tokenizer import segment
-from seq2seq_tf2 import config
 
 
 REMOVE_WORDS = ['|', '[', ']', '语音', '图片']
@@ -84,12 +82,5 @@ def preprocess_sentence(sentence):
 
 
 if __name__ == '__main__':
-    train_list_src, train_list_trg = parse_data(config.train_path)
-    test_list_src, _ = parse_data(config.test_path)
-    save_data(train_list_src,
-              train_list_trg,
-              test_list_src,
-              config.train_seg_path_x,
-              config.train_seg_path_y,
-              config.test_seg_path_x,
-              stop_words_path=config.stop_words_path)
+    pass
+

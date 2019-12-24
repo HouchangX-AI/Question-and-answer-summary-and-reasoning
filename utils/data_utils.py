@@ -1,11 +1,8 @@
-from collections import defaultdict
 import numpy as np
 import pickle
 import os
+import copy
 from collections import Counter
-import jieba
-# from seq2seq_tf2.data_reader import read_data
-from seq2seq_tf2 import config
 
 
 PAD_TOKEN = 'PAD'
@@ -16,9 +13,6 @@ UNK_TOKEN = 'UNK'
 start_id = 0
 end_id = 1
 unk_id = 2
-# start_token = u"<s>"
-# end_token = u"<e>"
-# unk_token = u"<unk>"
 
 
 def save_word_dict(dict_data, save_path):
@@ -63,16 +57,6 @@ def filter_dict(word_dict, min_count=3):
         if c < min_count:
             del out_dict[w]
     return out_dict
-
-# def build_vocab(lines, min_count=3):
-#     word_dict = stat_dict(lines)
-#     word_dict = filter_dict(word_dict, min_count)
-#     sorted_dict = sorted(word_dict.items(), key=lambda x:x[1], reverse=True)
-#     sorted_words = [w for w,c in sorted_dict]
-#     sorted_words = [start_token, end_token, unk_token] + sorted_words
-#     vocab = dict([(w,i) for i,w in enumerate(sorted_words)])
-#     reverse_vocab = dict([(i,w) for i,w in enumerate(sorted_words)])
-#     return vocab, reverse_vocab
 
 
 def read_lines(path, col_sep=None):
@@ -183,7 +167,6 @@ def transform_data(data, vocab):
     return out_data
 
 
-
 def load_pkl(pkl_path):
     """
     加载词典文件
@@ -260,17 +243,17 @@ def save(pred_labels, ture_labels=None, pred_save_path=None, data_set=None):
         print("pred_save_path:", pred_save_path)
 
 
-def load_word2vec(vocab_size):
+def load_word2vec(params):
     """
     load pretrain word2vec weight matrix
     :param vocab_size:
     :return:
     """
-    word2vec_dict = load_pkl(config.word2vec_output)
-    vocab_dict = open(config.vocab_path).readlines()
-    embedding_matrix = np.zeros((vocab_size, config.embedding_dim))
+    word2vec_dict = load_pkl(params['word2vec_output'])
+    vocab_dict = open(params['vocab_path']).readlines()
+    embedding_matrix = np.zeros((params['vocab_size'], params['embed_size']))
 
-    for line in vocab_dict[:vocab_size]:
+    for line in vocab_dict[:params['vocab_size']]:
         word_id = line.split()
         word, i = word_id
         embedding_vector = word2vec_dict.get(word)

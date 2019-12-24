@@ -1,7 +1,6 @@
 from gensim.models import Word2Vec
 from gensim.models.word2vec import LineSentence
 from gensim.models.keyedvectors import KeyedVectors
-from seq2seq_tf2 import config
 from utils.data_utils import dump_pkl
 
 
@@ -57,10 +56,5 @@ def build(train_x_seg_path, test_y_seg_path, test_seg_path, out_path=None, sente
 
 
 if __name__ == '__main__':
-    build(config.train_seg_path_x,
-          config.train_seg_path_y,
-          config.test_seg_path_x,
-          out_path=config.word2vec_output,
-          sentence_path=config.sentence_path,
-          w2v_bin_path=config.w2v_bin_path,
-          min_count=1)
+    pass
+

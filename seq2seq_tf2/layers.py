@@ -1,6 +1,4 @@
 import tensorflow as tf
-from seq2seq_tf2 import config
-from utils.data_utils import load_word2vec
 
 
 class Encoder(tf.keras.layers.Layer):
@@ -63,7 +61,8 @@ class BahdanauAttention(tf.keras.layers.Layer):
         if use_coverage and prev_coverage is not None:  # non-first step of coverage
             # Multiply coverage vector by w_c to get coverage_features.
             # Calculate v^T tanh(W_h h_i + W_s s_t + w_c c_i^t + b_attn)
-            e = self.V(tf.nn.tanh(self.W1(enc_output) + self.W2(hidden_with_time_axis) + self.Wc(prev_coverage)))  # shape (batch_size,attn_length)
+            # shape (batch_size,attn_length)
+            e = self.V(tf.nn.tanh(self.W1(enc_output) + self.W2(hidden_with_time_axis) + self.Wc(prev_coverage)))
             # Calculate attention distribution
             attn_dist = masked_attention(e)
 

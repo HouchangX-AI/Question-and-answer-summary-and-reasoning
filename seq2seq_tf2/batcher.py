@@ -1,5 +1,4 @@
 import tensorflow as tf
-from seq2seq_tf2 import config
 
 SENTENCE_START = '<s>'
 SENTENCE_END = '</s>'
@@ -25,7 +24,8 @@ class Vocab:
 
                 w = pieces[0]
                 if w in [SENTENCE_START, SENTENCE_END, UNKNOWN_TOKEN, PAD_TOKEN, START_DECODING, STOP_DECODING]:
-                    raise Exception(r'<s>, </s>, [UNK], [PAD], [START] and [STOP] shouldn\'t be in the vocab file, but %s is' % w)
+                    raise Exception(r'<s>, </s>, [UNK], [PAD], [START] and [STOP] shouldn\'t be in the vocab file, '
+                                    r'but %s is' % w)
 
                 if w in self.word2id:
                     raise Exception('Duplicated word in vocabulary file: %s' % w)
@@ -34,10 +34,12 @@ class Vocab:
                 self.id2word[self.count] = w
                 self.count += 1
                 if max_size != 0 and self.count >= max_size:
-                    print("max_size of vocab was specified as %i; we now have %i words. Stopping reading." % (max_size, self.count))
+                    print("max_size of vocab was specified as %i; we now have %i words. Stopping reading."
+                          % (max_size, self.count))
                     break
 
-        print("Finished constructing vocabulary of %i total words. Last word added: %s" % (self.count, self.id2word[self.count - 1]))
+        print("Finished constructing vocabulary of %i total words. Last word added: %s" %
+              (self.count, self.id2word[self.count - 1]))
 
     def word_to_id(self, word):
         if word not in self.word2id:
@@ -91,12 +93,14 @@ def output_to_words(id_list, vocab, article_oovs):
         try:
             w = vocab.id_to_word(i)  # might be [UNK]
         except ValueError as e:  # w is OOV
-            assert article_oovs is not None, "Error: model produced a word ID that isn't in the vocabulary. This should not happen in baseline (no pointer-generator) mode"
+            assert article_oovs is not None, "Error: model produced a word ID that isn't in the vocabulary. " \
+                                             "This should not happen in baseline (no pointer-generator) mode"
             article_oov_idx = i - vocab.size()
             try:
                 w = article_oovs[article_oov_idx]
             except ValueError as e:  # i doesn't correspond to an article oov
-                raise ValueError('Error: model produced word ID %i which corresponds to article OOV %i but this example only has %i article OOVs' % (i, article_oov_idx, len(article_oovs)))
+                raise ValueError('Error: model produced word ID %i which corresponds to article OOV %i but this '
+                                 'example only has %i article OOVs' % (i, article_oov_idx, len(article_oovs)))
         words.append(w)
     return words
 
@@ -123,7 +127,10 @@ def abstract_to_sents(abstract):
 
 def get_dec_inp_targ_seqs(sequence, max_len, start_id, stop_id):
     """
-    Given the reference summary as a sequence of tokens, return the input sequence for the decoder, and the target sequence which we will use to calculate loss. The sequence will be truncated if it is longer than max_len. The input sequence must start with the start_id and the target sequence must end with the stop_id (but not if it's been truncated).
+    Given the reference summary as a sequence of tokens, return the input sequence for the decoder,
+    and the target sequence which we will use to calculate loss. The sequence will be truncated if it is longer
+    than max_len. The input sequence must start with the start_id and the target sequence must end with the stop_id
+    (but not if it's been truncated).
     Args:
       sequence: List of ids (integers)
       max_len: integer
@@ -226,8 +233,10 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
                 yield output
 
 
-def batch_generator(generator, vocab, train_x_path, train_y_path, test_x_path, max_enc_len, max_dec_len, batch_size, mode):
-    dataset = tf.data.Dataset.from_generator(lambda: generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_len, max_dec_len, mode, batch_size),
+def batch_generator(generator, vocab, train_x_path, train_y_path,
+                    test_x_path, max_enc_len, max_dec_len, batch_size, mode):
+    dataset = tf.data.Dataset.from_generator(lambda: generator(vocab, train_x_path, train_y_path, test_x_path,
+                                                               max_enc_len, max_dec_len, mode, batch_size),
                                              output_types={
                                                  "enc_len": tf.int32,
                                                  "enc_input": tf.int32,

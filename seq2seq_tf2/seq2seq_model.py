@@ -26,7 +26,8 @@ class PGN(tf.keras.Model):
         enc_output, enc_hidden = self.encoder(enc_inp, enc_hidden)
         return enc_hidden, enc_output
 
-    def call(self, enc_output, dec_hidden, enc_inp, enc_extended_inp, dec_inp, batch_oov_len, enc_padding_mask, use_coverage, prev_coverage):
+    def call(self, enc_output, dec_hidden, enc_inp, enc_extended_inp, dec_inp,
+             batch_oov_len, enc_padding_mask, use_coverage, prev_coverage):
         predictions = []
         attentions = []
         coverages = []
@@ -60,15 +61,16 @@ class PGN(tf.keras.Model):
             if self.params["mode"] == "train":
                 return tf.stack(final_dists, 1), dec_hidden, attentions, coverages
             else:
-                return tf.stack(final_dists, 1), dec_hidden, context_vector, tf.stack(attentions, 1), tf.stack(p_gens, 1)
+                return tf.stack(final_dists, 1), dec_hidden, context_vector, \
+                       tf.stack(attentions, 1), tf.stack(p_gens, 1)
 
         else:
             for t in range(dec_inp.shape[1]):
                 print('wrong wrong !!!!!!!!!!')
                 dec_x, pred, dec_hidden = self.decoder(tf.expand_dims(dec_inp[:, t], 1),
-                                                           dec_hidden,
-                                                           enc_output,
-                                                           context_vector)
+                                                       dec_hidden,
+                                                       enc_output,
+                                                       context_vector)
                 # context_vector, attn = self.attention(dec_hidden, enc_output)
                 predictions.append(pred)
 
@@ -77,10 +79,6 @@ class PGN(tf.keras.Model):
                 return tf.stack(predictions, 1), dec_hidden
             else:
                 return 1
-                #     else:
-                #         return tf.stack(final_dists, 1), dec_hidden, context_vector, tf.stack(attentions, 1), tf.stack(p_gens, 1)
-
-                # return tf.stack(predictions, 1), dec_hidden
 
 
 def _calc_final_dist(_enc_batch_extend_vocab, vocab_dists, attn_dists, p_gens, batch_oov_len, vocab_size, batch_size):

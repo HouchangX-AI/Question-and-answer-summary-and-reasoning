@@ -2,7 +2,6 @@ import logging
 import os
 import pathlib
 import pandas as pd
-# from src.utils.tokenizer import process_line
 
 
 root = pathlib.Path(os.path.abspath(__file__)).parent.parent.parent

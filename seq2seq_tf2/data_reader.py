@@ -1,8 +1,4 @@
-from collections import Counter
-import io
-import tensorflow as tf
 from collections import defaultdict
-from seq2seq_tf2 import config
 
 
 def save_word_dict(vocab, save_path):
@@ -69,6 +65,5 @@ def build_vocab(items, sort=True, min_count=0, lower=False):
 
 
 if __name__ == '__main__':
-    lines = read_data(config.train_seg_path_x, config.train_seg_path_y, config.test_seg_path_x)
-    vocab, reverse_vocab = build_vocab(lines)
-    save_word_dict(vocab, config.vocab_path)
+    pass
+
