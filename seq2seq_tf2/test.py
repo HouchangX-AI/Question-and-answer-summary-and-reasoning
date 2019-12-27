@@ -36,7 +36,7 @@ def test_and_save(params):
     with tqdm(total=params["num_to_test"], position=0, leave=True) as pbar:
         for i in range(params["num_to_test"]):
             trial = next(gen)
-            with open(params["test_save_dir"] + "/article_" + str(i) + ".txt", "w") as f:
+            with open(params["test_save_dir"] + "/article_" + str(i) + ".txt", "w", encoding='utf-8') as f:
                 f.write("article:\n")
                 f.write(trial.text)
                 f.write("\n\nabstract:\n")

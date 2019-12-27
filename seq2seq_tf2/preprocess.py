@@ -82,5 +82,14 @@ def preprocess_sentence(sentence):
 
 
 if __name__ == '__main__':
-    pass
+    train_list_src, train_list_trg = parse_data('../datasets/AutoMaster_TrainSet.csv')
+    test_list_src, _ = parse_data('../datasets/AutoMaster_TestSet.csv')
+    save_data(train_list_src,
+              train_list_trg,
+              test_list_src,
+              '../datasets/train_set.seg_x.txt',
+              '../datasets/train_set.seg_y.txt',
+              '../datasets/test_set.seg_x.txt',
+              stop_words_path='../datasets/stop_words.txt')
+
 

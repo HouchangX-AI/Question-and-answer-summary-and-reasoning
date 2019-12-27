@@ -250,7 +250,7 @@ def load_word2vec(params):
     :return:
     """
     word2vec_dict = load_pkl(params['word2vec_output'])
-    vocab_dict = open(params['vocab_path']).readlines()
+    vocab_dict = open(params['vocab_path'], encoding='utf-8').readlines()
     embedding_matrix = np.zeros((params['vocab_size'], params['embed_size']))
 
     for line in vocab_dict[:params['vocab_size']]:

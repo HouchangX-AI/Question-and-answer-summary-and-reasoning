@@ -6,7 +6,7 @@ from utils.data_utils import load_word2vec
 class PGN(tf.keras.Model):
     def __init__(self, params):
         super(PGN, self).__init__()
-        self.embedding_matrix = load_word2vec(params["vocab_size"])
+        self.embedding_matrix = load_word2vec(params)
         self.params = params
         self.encoder = Encoder(params["vocab_size"],
                                params["embed_size"],

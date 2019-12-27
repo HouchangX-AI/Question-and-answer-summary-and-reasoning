@@ -12,6 +12,7 @@ def train(params):
 
     print("Creating the vocab ...")
     vocab = Vocab(params["vocab_path"], params["vocab_size"])
+    print('true vocab is ', vocab)
 
     print("Creating the batcher ...")
     b = batcher(vocab, params)
