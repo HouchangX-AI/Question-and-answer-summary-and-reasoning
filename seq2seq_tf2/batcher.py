@@ -169,7 +169,9 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
             article_words = article.split()[:max_enc_len]
             enc_len = len(article_words)
             # 添加mark标记
+            # print('enc_len is', enc_len)
             sample_encoder_pad_mask = [1 for _ in range(enc_len)]
+            # print('sample_encoder_pad_mask is', sample_encoder_pad_mask)
 
             enc_input = [vocab.word_to_id(w) for w in article_words]
             enc_input_extend_vocab, article_oovs = article_to_ids(article_words, vocab)
@@ -183,7 +185,9 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
 
             dec_len = len(dec_input)
             # 添加mark标记
+            # print('dec_len ids ', dec_len)
             sample_decoder_pad_mask = [1 for _ in range(dec_len)]
+            # print('sample_decoder_pad_mask is ', sample_decoder_pad_mask)
 
             output = {
                 "enc_len": enc_len,

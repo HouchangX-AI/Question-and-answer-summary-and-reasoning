@@ -25,15 +25,15 @@ def main():
                         help="maximum number of words of the predicted abstract", type=int)
     parser.add_argument("--min_dec_steps", default=30,
                         help="Minimum number of words of the predicted abstract", type=int)
-    parser.add_argument("--batch_size", default=3, help="batch size", type=int)
+    parser.add_argument("--batch_size", default=16, help="batch size", type=int)
     parser.add_argument("--beam_size", default=3,
                         help="beam size for beam search decoding (must be equal to batch size in decode mode)",
                         type=int)
     parser.add_argument("--vocab_size", default=30000, help="Vocabulary size", type=int)
     parser.add_argument("--embed_size", default=256, help="Words embeddings dimension", type=int)
-    parser.add_argument("--enc_units", default=128, help="Encoder GRU cell units number", type=int)
-    parser.add_argument("--dec_units", default=128, help="Decoder GRU cell units number", type=int)
-    parser.add_argument("--attn_units", default=128,
+    parser.add_argument("--enc_units", default=256, help="Encoder GRU cell units number", type=int)
+    parser.add_argument("--dec_units", default=256, help="Decoder GRU cell units number", type=int)
+    parser.add_argument("--attn_units", default=256,
                         help="[context vector, decoder state, decoder input] feedforward result dimension - "
                              "this result is used to compute the attention weights", type=int)
     parser.add_argument("--learning_rate", default=0.001, help="Learning rate", type=float)
@@ -60,7 +60,7 @@ def main():
     parser.add_argument("--num_to_test", default=10, help="Number of examples to test", type=int)
     parser.add_argument("--epochs", default=30, help="train epochs", type=int)
     # mode
-    parser.add_argument("--mode", default='test', help="training, eval or test options")
+    parser.add_argument("--mode", default='train', help="training, eval or test options")
     parser.add_argument("--pointer_gen", default=True, help="training, eval or test options")
     parser.add_argument("--is_coverage", default=True, help="is_coverage")
 

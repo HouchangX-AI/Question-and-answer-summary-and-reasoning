@@ -7,6 +7,12 @@ from seq2seq_tf2.train_helper import train_model
 def train(params):
     assert params["mode"].lower() == "train", "change training mode to 'train'"
 
+    vocab = Vocab(params["vocab_path"], params["vocab_size"])
+    print('true vocab is ', vocab)
+
+    print("Creating the batcher ...")
+    b = batcher(vocab, params)
+
     print("Building the model ...")
     model = PGN(params)
 
@@ -14,8 +20,8 @@ def train(params):
     vocab = Vocab(params["vocab_path"], params["vocab_size"])
     print('true vocab is ', vocab)
 
-    print("Creating the batcher ...")
-    b = batcher(vocab, params)
+    # print("Creating the batcher ...")
+    # b = batcher(vocab, params)
 
     print("Creating the checkpoint manager")
     checkpoint_dir = "{}/checkpoint".format(params["model_dir"])

@@ -11,8 +11,8 @@ class Encoder(tf.keras.layers.Layer):
                                                    embedding_dim,
                                                    weights=[embedding_matrix],
                                                    trainable=False)
-        gpus = tf.config.experimental.list_physical_devices('GPU')
-        print('gpus number is ', gpus)
+        # gpus = tf.config.experimental.list_physical_devices('GPU')
+        # print('gpus number is ', gpus)
         # tf.keras.layers.GRU自动匹配cpu、gpu
         self.gru = tf.keras.layers.GRU(self.enc_units,
                                        return_sequences=True,
