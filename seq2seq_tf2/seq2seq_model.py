@@ -23,62 +23,60 @@ class PGN(tf.keras.Model):
 
     def call_encoder(self, enc_inp):
         enc_hidden = self.encoder.initialize_hidden_state()
+        # [batch_sz, max_train_x, enc_units], [batch_sz, enc_units]
         enc_output, enc_hidden = self.encoder(enc_inp, enc_hidden)
-        return enc_hidden, enc_output
+        return enc_output, enc_hidden
 
-    def call(self, enc_output, dec_hidden, enc_inp, enc_extended_inp, dec_inp,
-             batch_oov_len, enc_padding_mask, use_coverage, prev_coverage):
+    def call(self, enc_output, dec_hidden, enc_inp, enc_extended_inp, dec_inp, batch_oov_len, enc_padding_mask, use_coverage, prev_coverage):
         predictions = []
         attentions = []
         coverages = []
         p_gens = []
-        context_vector, attn_dist, coverage_next = self.attention(dec_hidden,
-                                                                  enc_output,
-                                                                  enc_padding_mask,
+        context_vector, attn_dist, coverage_next = self.attention(dec_hidden,  # shape=(3, 115, 256) shape=(3, 256)
+                                                                  enc_output,  # shape=(3, 256) shape=(3, 156, 256)
+                                                                  enc_padding_mask,  # shape=(3, 115) shape=(3, 156)
                                                                   use_coverage,
-                                                                  prev_coverage)
+                                                                  prev_coverage)  # shape=(3, 115, 1)
 
-        if self.params["pointer_gen"]:
-            for t in range(dec_inp.shape[1]):
-                dec_x, pred, dec_hidden = self.decoder(tf.expand_dims(dec_inp[:, t], 1),
-                                                       dec_hidden,
-                                                       enc_output,
-                                                       context_vector)
-                context_vector, attn_dist, coverage_next = self.attention(dec_hidden,
-                                                                          enc_output,
-                                                                          enc_padding_mask,
-                                                                          use_coverage,
-                                                                          prev_coverage)
+        if self.params["mode"] == "test":
+            dec_x, pred, dec_hidden = self.decoder(dec_inp,
+                                                   dec_hidden,
+                                                   enc_output,
+                                                   context_vector)
+            if self.params["pointer_gen"]:
                 p_gen = self.pointer(context_vector, dec_hidden, tf.squeeze(dec_x, axis=1))
+                final_dists = _calc_final_dist(enc_extended_inp,
+                                               [pred],
+                                               [attn_dist],
+                                               [p_gen],
+                                               batch_oov_len,
+                                               self.params["vocab_size"],
+                                               self.params["batch_size"])
+                return tf.stack(final_dists, 1), dec_hidden, attn_dist, coverage_next, p_gen
 
-                predictions.append(pred)
-                coverages.append(coverage_next)
-                attentions.append(attn_dist)
-                p_gens.append(p_gen)
+        elif self.params["mode"] == "train":
+            if self.params["pointer_gen"]:
+                for t in range(dec_inp.shape[1]):
+                    dec_x, pred, dec_hidden = self.decoder(tf.expand_dims(dec_inp[:, t], 1),
+                                                           dec_hidden,
+                                                           enc_output,
+                                                           context_vector)
+                    context_vector, attn_dist, coverage_next = self.attention(dec_hidden,
+                                                                              enc_output,
+                                                                              enc_padding_mask,
+                                                                              use_coverage,
+                                                                              prev_coverage)
+                    p_gen = self.pointer(context_vector, dec_hidden, tf.squeeze(dec_x, axis=1))
 
-            final_dists = _calc_final_dist(enc_extended_inp, predictions, attentions, p_gens, batch_oov_len,
-                                           self.params["vocab_size"], self.params["batch_size"])
-            if self.params["mode"] == "train":
+                    predictions.append(pred)
+                    coverages.append(coverage_next)
+                    attentions.append(attn_dist)
+                    p_gens.append(p_gen)
+
+                final_dists = _calc_final_dist(enc_extended_inp, predictions, attentions, p_gens, batch_oov_len,
+                                               self.params["vocab_size"], self.params["batch_size"])
                 return tf.stack(final_dists, 1), dec_hidden, attentions, coverages
-            else:
-                return tf.stack(final_dists, 1), dec_hidden, context_vector, \
-                       tf.stack(attentions, 1), tf.stack(p_gens, 1)
-
-        else:
-            for t in range(dec_inp.shape[1]):
-                print('wrong wrong !!!!!!!!!!')
-                dec_x, pred, dec_hidden = self.decoder(tf.expand_dims(dec_inp[:, t], 1),
-                                                       dec_hidden,
-                                                       enc_output,
-                                                       context_vector)
-                # context_vector, attn = self.attention(dec_hidden, enc_output)
-                predictions.append(pred)
-
-            if self.params["mode"] == "train":
-                # predictions_shape = (batch_size, dec_len, vocab_size) with dec_len = 1 in pred mode
-                return tf.stack(predictions, 1), dec_hidden
-            else:
-                return 1
+                # return final_dists, dec_hidden, attentions, coverages
 
 
 def _calc_final_dist(_enc_batch_extend_vocab, vocab_dists, attn_dists, p_gens, batch_oov_len, vocab_size, batch_size):

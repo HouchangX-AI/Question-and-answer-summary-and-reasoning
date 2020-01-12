@@ -209,6 +209,7 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
     if mode == "test":
         test_dataset = tf.data.TextLineDataset(test_x_path)
         for raw_record in test_dataset:
+            # print('raw_record', raw_record)
             article = raw_record.numpy().decode("utf-8")
             article_words = article.split()[:max_enc_len]
             enc_len = len(article_words)
@@ -232,7 +233,7 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
                 "sample_decoder_pad_mask": [],
                 "sample_encoder_pad_mask": sample_encoder_pad_mask,
             }
-
+            # print('output is ', output)
             for _ in range(batch_size):
                 yield output
 
@@ -293,8 +294,8 @@ def batch_generator(generator, vocab, train_x_path, train_y_path,
                                                    "article": b'',
                                                    "abstract": b'',
                                                    "abstract_sents": b'',
-                                                   "sample_decoder_pad_mask": 1,
-                                                   "sample_encoder_pad_mask": 1},
+                                                   "sample_decoder_pad_mask": 0,
+                                                   "sample_encoder_pad_mask": 0},
                                    drop_remainder=True)
 
     def update(entry):

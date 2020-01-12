@@ -11,8 +11,6 @@ class Encoder(tf.keras.layers.Layer):
                                                    embedding_dim,
                                                    weights=[embedding_matrix],
                                                    trainable=False)
-        # gpus = tf.config.experimental.list_physical_devices('GPU')
-        # print('gpus number is ', gpus)
         # tf.keras.layers.GRU自动匹配cpu、gpu
         self.gru = tf.keras.layers.GRU(self.enc_units,
                                        return_sequences=True,
@@ -41,7 +39,7 @@ class BahdanauAttention(tf.keras.layers.Layer):
         self.W2 = tf.keras.layers.Dense(units)
         self.V = tf.keras.layers.Dense(1)
 
-    def call(self, dec_hidden, enc_output, enc_padding_mask, use_coverage, prev_coverage):
+    def call(self, dec_hidden, enc_output, enc_padding_mask, use_coverage=False, prev_coverage=None):
         """
         dec_hidden:
         """

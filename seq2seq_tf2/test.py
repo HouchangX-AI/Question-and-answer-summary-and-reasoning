@@ -20,10 +20,12 @@ def test(params):
 
     print("Creating the checkpoint manager")
     checkpoint_dir = "{}".format(params["model_dir"])
+    print('checkpoint_dir is ', checkpoint_dir)
     ckpt = tf.train.Checkpoint(step=tf.Variable(0), PGN=model)
     ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir, max_to_keep=11)
 
     path = params["model_path"] if params["model_path"] else ckpt_manager.latest_checkpoint
+    print('path is ', path)
     ckpt.restore(path)
     print("Model restored")
     for batch in b:

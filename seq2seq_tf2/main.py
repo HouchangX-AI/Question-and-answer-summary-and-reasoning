@@ -25,7 +25,7 @@ def main():
                         help="maximum number of words of the predicted abstract", type=int)
     parser.add_argument("--min_dec_steps", default=30,
                         help="Minimum number of words of the predicted abstract", type=int)
-    parser.add_argument("--batch_size", default=16, help="batch size", type=int)
+    parser.add_argument("--batch_size", default=3, help="batch size", type=int)
     parser.add_argument("--beam_size", default=3,
                         help="beam size for beam search decoding (must be equal to batch size in decode mode)",
                         type=int)
@@ -36,15 +36,18 @@ def main():
     parser.add_argument("--attn_units", default=256,
                         help="[context vector, decoder state, decoder input] feedforward result dimension - "
                              "this result is used to compute the attention weights", type=int)
-    parser.add_argument("--learning_rate", default=0.001, help="Learning rate", type=float)
+    parser.add_argument("--learning_rate", default=0.1, help="Learning rate", type=float)
     parser.add_argument("--adagrad_init_acc", default=0.1,
                         help="Adagrad optimizer initial accumulator value. Please refer to the Adagrad optimizer "
                              "API documentation on tensorflow site for more details.", type=float)
     parser.add_argument("--max_grad_norm", default=2.0, help="Gradient norm above which gradients must be clipped",
                         type=float)
+    parser.add_argument('--cov_loss_wt', default=0.5, help='Weight of coverage loss (lambda in the paper).'
+                                                           ' If zero, then no incentive to minimize coverage loss.',
+                        type=float)
 
     # path
-    parser.add_argument("--model_dir", default='./ckpt', help="Model folder")
+    parser.add_argument("--model_dir", default='./ckpt/checkpoint', help="Model folder")
     parser.add_argument("--model_path", help="Path to a specific model", default="", type=str)
     parser.add_argument("--train_seg_x_dir", default='../datasets/train_set.seg_x.txt', help="train_seg_x_dir")
     parser.add_argument("--train_seg_y_dir", default='../datasets/train_set.seg_y.txt', help="train_seg_y_dir")
@@ -56,11 +59,11 @@ def main():
 
     # others
     parser.add_argument("--checkpoints_save_steps", default=10, help="Save checkpoints every N steps", type=int)
-    parser.add_argument("--max_steps", default=5000, help="Max number of iterations", type=int)
+    parser.add_argument("--max_steps", default=10000, help="Max number of iterations", type=int)
     parser.add_argument("--num_to_test", default=10, help="Number of examples to test", type=int)
     parser.add_argument("--epochs", default=30, help="train epochs", type=int)
     # mode
-    parser.add_argument("--mode", default='train', help="training, eval or test options")
+    parser.add_argument("--mode", default='test', help="training, eval or test options")
     parser.add_argument("--pointer_gen", default=True, help="training, eval or test options")
     parser.add_argument("--is_coverage", default=True, help="is_coverage")
 
@@ -79,5 +82,5 @@ def main():
 if __name__ == '__main__':
     gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
     if gpus:
-        tf.config.experimental.set_visible_devices(devices=gpus[2], device_type='GPU')
+        tf.config.experimental.set_visible_devices(devices=gpus[1], device_type='GPU')
     main()
