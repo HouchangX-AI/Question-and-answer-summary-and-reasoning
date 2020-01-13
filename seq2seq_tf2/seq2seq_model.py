@@ -32,12 +32,12 @@ class PGN(tf.keras.Model):
         attentions = []
         coverages = []
         p_gens = []
-        context_vector, attn_dist, coverage_next = self.attention(dec_hidden,  # shape=(3, 115, 256) shape=(3, 256)
-                                                                  enc_output,  # shape=(3, 256) shape=(3, 156, 256)
-                                                                  enc_padding_mask,  # shape=(3, 115) shape=(3, 156)
-                                                                  use_coverage,
-                                                                  prev_coverage)  # shape=(3, 115, 1)
 
+        context_vector, attn_dist, coverage_next = self.attention(dec_hidden,  # shape=(16, 256)
+                                                                  enc_output,  # shape=(16, 200, 256)
+                                                                  enc_padding_mask,  # (16, 200)
+                                                                  use_coverage,
+                                                                  prev_coverage)  # None
         if self.params["mode"] == "test":
             dec_x, pred, dec_hidden = self.decoder(dec_inp,
                                                    dec_hidden,
@@ -52,8 +52,14 @@ class PGN(tf.keras.Model):
                                                batch_oov_len,
                                                self.params["vocab_size"],
                                                self.params["batch_size"])
+                # print('tf.stack(final_dists, 1) is ', tf.stack(final_dists, 1)) shape=(3, 1, 30000)
+                # print('dec_hidden is ', dec_hidden) shape=(3, 256)
+                # print('attn_dist is ', attn_dist) shape=(3, 115
+                # print('coverage_next is ', coverage_next) shape=(3, 115, 1)
+                # print('p_gen is ', p_gen) shape=(3, 1)
+                # print('final_dists is ', final_dists) shape=(3, 30000)
                 return tf.stack(final_dists, 1), dec_hidden, attn_dist, coverage_next, p_gen
-
+            # return tf.stack(final_dists, 1), dec_hidden, context_vector, tf.stack(attentions, 1), tf.stack(p_gens, 1)
         elif self.params["mode"] == "train":
             if self.params["pointer_gen"]:
                 for t in range(dec_inp.shape[1]):
@@ -61,13 +67,19 @@ class PGN(tf.keras.Model):
                                                            dec_hidden,
                                                            enc_output,
                                                            context_vector)
+                    # dec_x shape=(16, 1, 512)
+                    # pred shape=(16, 30000)
+                    # dec_hidden shape=(16, 256)
                     context_vector, attn_dist, coverage_next = self.attention(dec_hidden,
                                                                               enc_output,
                                                                               enc_padding_mask,
                                                                               use_coverage,
-                                                                              prev_coverage)
+                                                                              coverage_next)
+                    # context_vector shape=(16, 256)
+                    # attn_dist shape=(16, 200)
+                    # coverage_next shape=(16, 200, 1)
                     p_gen = self.pointer(context_vector, dec_hidden, tf.squeeze(dec_x, axis=1))
-
+                    # p_gen shape = (16, 256)
                     predictions.append(pred)
                     coverages.append(coverage_next)
                     attentions.append(attn_dist)

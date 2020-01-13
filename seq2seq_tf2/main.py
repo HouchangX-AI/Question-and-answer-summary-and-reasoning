@@ -82,5 +82,5 @@ def main():
 if __name__ == '__main__':
     gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
     if gpus:
-        tf.config.experimental.set_visible_devices(devices=gpus[1], device_type='GPU')
+        tf.config.experimental.set_visible_devices(devices=gpus[3], device_type='GPU')
     main()

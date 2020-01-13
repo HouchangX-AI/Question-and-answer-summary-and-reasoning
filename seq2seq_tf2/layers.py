@@ -41,12 +41,18 @@ class BahdanauAttention(tf.keras.layers.Layer):
 
     def call(self, dec_hidden, enc_output, enc_padding_mask, use_coverage=False, prev_coverage=None):
         """
-        dec_hidden:
+
+        :param dec_hidden: shape=(16, 256)
+        :param enc_output: shape=(16, 200, 256)
+        :param enc_padding_mask: shape=(16, 200)
+        :param use_coverage:
+        :param prev_coverage: None
+        :return:
         """
         # hidden shape == (batch_size, hidden size)
         # hidden_with_time_axis shape == (batch_size, 1, hidden size)
         # we are doing this to perform addition to calculate the score
-        hidden_with_time_axis = tf.expand_dims(dec_hidden, 1)
+        hidden_with_time_axis = tf.expand_dims(dec_hidden, 1)  # shape=(16, 1, 256)
         # att_features = self.W1(enc_output) + self.W2(hidden_with_time_axis)
 
         def masked_attention(score):
@@ -69,18 +75,19 @@ class BahdanauAttention(tf.keras.layers.Layer):
 
         else:
             # Calculate v^T tanh(W_h h_i + W_s s_t + b_attn)
-            e = self.V(tf.nn.tanh(self.W1(enc_output) + self.W2(hidden_with_time_axis)))
+            e = self.V(tf.nn.tanh(self.W1(enc_output) + self.W2(hidden_with_time_axis)))  # shape=(16, 200, 1)
             # Calculate attention distribution
-            attn_dist = masked_attention(e)
+            attn_dist = masked_attention(e)  # shape=(16, 200, 1)
             if use_coverage:  # first step of training
                 coverage = attn_dist  # initialize coverage
             else:
                 coverage = []
 
         # context_vector shape after sum == (batch_size, hidden_size)
-        context_vector = attn_dist * enc_output
-        context_vector = tf.reduce_sum(context_vector, axis=1)
-
+        context_vector = attn_dist * enc_output  # shape=(16, 200, 256)
+        context_vector = tf.reduce_sum(context_vector, axis=1)  # shape=(16, 256)
+        # tf.squeeze(attn_dist, -1)  shape=(16, 200)
+        # coverage  shape=(16, 200, 1)
         return context_vector, tf.squeeze(attn_dist, -1), coverage
 
 

@@ -8,7 +8,7 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
                                             clipnorm=params['max_grad_norm'])
     loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
 
-    def loss_function(real, pred, padding_mask):
+    def loss_function(real, pred):
         mask = tf.math.logical_not(tf.math.equal(real, 1))
         dec_lens = tf.reduce_sum(tf.cast(mask, dtype=tf.float32), axis=-1)
         loss_ = loss_object(real, pred)
@@ -17,6 +17,22 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
         # we have to make sure no empty abstract is being used otherwise dec_lens may contain null values
         loss_ = tf.reduce_sum(loss_, axis=-1) / dec_lens
         return tf.reduce_mean(loss_)
+
+    def pgn_log_loss_function(real, final_dists, padding_mask):
+        # Calculate the loss per step
+        # This is fiddly; we use tf.gather_nd to pick out the probabilities of the gold target words
+        loss_per_step = []  # will be list length max_dec_steps containing shape (batch_size)
+        batch_nums = tf.range(0, limit=real.shape[0])  # shape (batch_size)
+        for dec_step, dist in enumerate(final_dists):
+            # The indices of the target words. shape (batch_size)
+            targets = real[:, dec_step]
+            indices = tf.stack((batch_nums, targets), axis=1)  # shape (batch_size, 2)
+            gold_probs = tf.gather_nd(dist, indices)  # shape (batch_size). prob of correct words on this step
+            losses = -tf.math.log(gold_probs)
+            loss_per_step.append(losses)
+        # Apply dec_padding_mask and get loss
+        _loss = _mask_and_avg(loss_per_step, padding_mask)
+        return _loss
 
     def _mask_and_avg(values, padding_mask):
         """Applies mask to values then returns overall average (a scalar)
@@ -52,11 +68,12 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
         coverage_loss = _mask_and_avg(covlosses, padding_mask)
         return coverage_loss
 
-    @tf.function
+    # @tf.function
     def train_step(enc_inp, enc_extended_inp, dec_inp, dec_tar, batch_oov_len, enc_padding_mask, padding_mask):
         loss = 0
         with tf.GradientTape() as tape:
             enc_output, enc_hidden = model.call_encoder(enc_inp)
+            # print('enc_hidden is ', enc_hidden)
             dec_hidden = enc_hidden
 
             predictions, _, attentions, coverages = model(enc_output,  # shape=(3, 200, 256)
@@ -70,9 +87,9 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
                                                           prev_coverage=None)
 
             if params["is_coverage"]:
-                loss = loss_function(dec_tar, predictions, padding_mask) + params["cov_loss_wt"] * _coverage_loss(attentions, enc_padding_mask)
+                loss = pgn_log_loss_function(dec_tar, predictions, padding_mask) + params["cov_loss_wt"] * _coverage_loss(attentions, padding_mask)
             else:
-                loss = loss_function(dec_tar, predictions, padding_mask)
+                loss = loss_function(dec_tar, predictions)
 
         variables = model.encoder.trainable_variables +\
                     model.attention.trainable_variables +\
