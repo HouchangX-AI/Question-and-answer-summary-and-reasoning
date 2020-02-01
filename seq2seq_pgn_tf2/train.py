@@ -1,7 +1,7 @@
 import tensorflow as tf
-from seq2seq_tf2.seq2seq_model import PGN
-from seq2seq_tf2.batcher import batcher, Vocab
-from seq2seq_tf2.train_helper import train_model
+from seq2seq_pgn_tf2.seq2seq_model import PGN
+from seq2seq_pgn_tf2.batcher import batcher, Vocab
+from seq2seq_pgn_tf2.train_helper import train_model
 
 
 def train(params):

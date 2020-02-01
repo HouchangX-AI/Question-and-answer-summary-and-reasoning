@@ -1,5 +1,5 @@
 import tensorflow as tf
-from seq2seq_tf2.layers import Encoder, BahdanauAttention, Decoder, Pointer
+from seq2seq_pgn_tf2.layers import Encoder, BahdanauAttention, Decoder, Pointer
 from utils.data_utils import load_word2vec
 
 

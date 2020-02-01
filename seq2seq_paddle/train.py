@@ -2,10 +2,10 @@ import paddle.fluid as fluid
 import paddle
 import os
 import six
-from paddle_model.seq2seq_model import encoder, train_decoder
+from seq2seq_paddle.seq2seq_model import encoder, train_decoder
 from utils.data_utils import load_vocab, read_vocab, save_word_dict, build_vocab, write_vocab, transform_data
-from paddle_model.reader import build_dataset, read_data
-from paddle_model import config
+from seq2seq_paddle.reader import build_dataset, read_data
+from seq2seq_paddle import config
 from preprocess import seg_data
 
 batch_size = 32

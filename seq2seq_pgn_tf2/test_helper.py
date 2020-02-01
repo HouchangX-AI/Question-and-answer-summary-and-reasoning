@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from seq2seq_tf2.batcher import output_to_words
+from seq2seq_pgn_tf2.batcher import output_to_words
 
 
 def batch_greedy_decode(model, enc_data, vocab, params):

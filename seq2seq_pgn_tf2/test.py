@@ -1,7 +1,7 @@
 import tensorflow as tf
-from seq2seq_tf2.seq2seq_model import PGN
-from seq2seq_tf2.batcher import Vocab, batcher
-from seq2seq_tf2.test_helper import beam_decode, batch_greedy_decode
+from seq2seq_pgn_tf2.seq2seq_model import PGN
+from seq2seq_pgn_tf2.batcher import Vocab, batcher
+from seq2seq_pgn_tf2.test_helper import beam_decode, batch_greedy_decode
 from tqdm import tqdm
 
 
