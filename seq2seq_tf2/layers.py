@@ -71,7 +71,7 @@ class BahdanauAttention(tf.keras.layers.Layer):
             attn_dist *= mask
             masked_sums = tf.reduce_sum(attn_dist, axis=1)
             attn_dist = attn_dist / tf.reshape(masked_sums, [-1, 1])
-
+            attn_dist = tf.expand_dims(attn_dist, axis=2)
             return attn_dist
 
         if use_coverage and prev_coverage is not None:  # non-first step of coverage
@@ -95,11 +95,11 @@ class BahdanauAttention(tf.keras.layers.Layer):
                 coverage = []
 
         # context_vector shape after sum == (batch_size, hidden_size)
-        attn_dist = tf.expand_dims(attn_dist, axis=2)
         context_vector = attn_dist * enc_output  # shape=(16, 200, 256)
         context_vector = tf.reduce_sum(context_vector, axis=1)  # shape=(16, 256)
         # tf.squeeze(attn_dist, -1)  shape=(16, 200)
         # coverage  shape=(16, 200, 1)
+        # print('coverage is ', coverage)
         return context_vector, tf.squeeze(attn_dist, -1), coverage
 
 

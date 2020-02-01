@@ -64,8 +64,8 @@ def main():
     parser.add_argument("--epochs", default=30, help="train epochs", type=int)
     # mode
     parser.add_argument("--mode", default='train', help="training, eval or test options")
-    parser.add_argument("--pointer_gen", default=False, help="training, eval or test options")
-    parser.add_argument("--is_coverage", default=False, help="is_coverage")
+    parser.add_argument("--pointer_gen", default=True, help="training, eval or test options")
+    parser.add_argument("--is_coverage", default=True, help="is_coverage")
     parser.add_argument("--greedy_decode", default=False, help="greedy_decoder")
 
     args = parser.parse_args()
