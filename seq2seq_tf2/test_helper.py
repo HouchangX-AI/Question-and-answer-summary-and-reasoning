@@ -3,10 +3,83 @@ import numpy as np
 from seq2seq_tf2.batcher import output_to_words
 
 
+def batch_greedy_decode(model, enc_data, vocab, params):
+    # 判断输入长度
+    # print(enc_data)
+    batch_data = enc_data[0]["enc_input"]
+    batch_size = enc_data[0]["enc_input"].shape[0]
+    # 开辟结果存储list
+    predicts = [''] * batch_size
+    inputs = batch_data
+    # print(batch_size, batch_data.shape)
+    enc_output, enc_hidden = model.call_encoder(inputs)
+    dec_hidden = enc_hidden
+    # dec_input = tf.expand_dims([vocab.word_to_id(vocab.START_DECODING)] * batch_size, 1)
+    dec_input = tf.constant([vocab.word_to_id('[START]')] * batch_size)
+    dec_input = tf.expand_dims(dec_input, axis=1)
+
+    # Teacher forcing - feeding the target as the next input
+
+    try:
+        batch_oov_len = tf.shape(enc_data[0]["article_oovs"])[1]
+    except:
+        batch_oov_len = tf.constant(0)
+
+    # coverage = tf.zeros((enc_output.shape[0], enc_output.shape[1], 1))
+    for t in range(params['max_dec_len']):
+        # 单步预测
+        # final_dist (batch_size, 1, vocab_size+batch_oov_len)
+        final_dists, dec_hidden, attentions, p_gens = model(enc_output,  # shape=(3, 115, 256)
+                                                            dec_hidden,  # shape=(3, 256)
+                                                            inputs,  # shape=(3, 115)
+                                                            enc_data[0]['extended_enc_input'],  # shape=(3, 115)
+                                                            dec_input,  # shape=(3, 1)
+                                                            batch_oov_len,  # shape=()
+                                                            enc_data[0]['sample_encoder_pad_mask'],  # shape=(3, 115)
+                                                            params['is_coverage'],
+                                                            prev_coverage=None)  # shape=(3, 115, 1)
+        # final_dist, dec_hidden, coverage = decode_one_step(params, model,
+        #                                                    enc_data["extended_enc_input"],
+        #                                                    batch_oov_len,
+        #                                                    dec_input,
+        #                                                    dec_hidden,
+        #                                                    enc_output,
+        #                                                    enc_data["enc_mask"],
+        #                                                    coverage,
+        #                                                    batch_size,
+        #                                                    use_coverage=True)
+        # print('final_dists is ', final_dists)
+        # id转换
+        final_dist = tf.squeeze(final_dists, axis=1)
+        # print(final_dist)
+        predicted_ids = tf.argmax(final_dist, axis=1)
+        # print(predicted_ids)
+
+        for index, predicted_id in enumerate(predicted_ids.numpy()):
+            predicts[index] += vocab.id_to_word(predicted_id) + ' '
+        # print(predicts)
+        # using teacher forcing
+        dec_input = tf.expand_dims(predicted_ids, 1)
+        # print('dec_input is ', dec_input)
+
+    print(predicts)
+    results = []
+    for predict in predicts:
+        # 去掉句子前后空格
+        predict = predict.strip()
+        # 句子小于max len就结束了 截断vocab.word_to_id('[STOP]')
+        if '[STOP]' in predict:
+            # 截断stop
+            predict = predict[:predict.index('[STOP]')]
+        # 保存结果
+        results.append(predict)
+    return results
+
+
 class Hypothesis:
     """ Class designed to hold hypothesises throughout the beamSearch decoding """
 
-    def __init__(self, tokens, log_probs, state, attn_dists, p_gens, coverage):
+    def __init__(self, tokens, log_probs, state, attn_dists, p_gens):
         # list of all the tokens from time 0 to the current time step t
         self.tokens = tokens
         # list of the log probabilities of the tokens of the tokens
@@ -17,13 +90,13 @@ class Hypothesis:
         self.attn_dists = attn_dists
         # generation probability of all the tokens
         self.p_gens = p_gens
-        self.coverage = coverage
+        # self.coverage = coverage
 
         # self.abstract = ""
         # self.text = ""
         # self.real_abstract = ""
 
-    def extend(self, token, log_prob, state, attn_dist, p_gen, coverage):
+    def extend(self, token, log_prob, state, attn_dist, p_gen):
         """Method to extend the current hypothesis by adding the next decoded token and all
         the informations associated with it"""
         return Hypothesis(tokens=self.tokens + [token],  # we add the decoded token
@@ -32,7 +105,7 @@ class Hypothesis:
                           attn_dists=self.attn_dists + [attn_dist],
                           # we  add the attention dist of the decoded token
                           p_gens=self.p_gens + [p_gen],  # we add the p_gen
-                          coverage=coverage)
+                          )
 
     @property
     def latest_token(self):
@@ -72,7 +145,7 @@ def beam_decode(model, batch, vocab, params):
         # print('batch_oov_len is ', batch_oov_len)
         # print('enc_pad_mask is ', enc_pad_mask)
         # print('prev_coverage is ', prev_coverage)
-        final_dists, dec_hidden, attentions, coverages, p_gens = model(enc_outputs,  # shape=(3, 115, 256)
+        final_dists, dec_hidden, attentions, p_gens = model(enc_outputs,  # shape=(3, 115, 256)
                                                                        dec_state,  # shape=(3, 256)
                                                                        enc_inp,  # shape=(3, 115)
                                                                        enc_extended_inp,  # shape=(3, 115)
@@ -82,19 +155,28 @@ def beam_decode(model, batch, vocab, params):
                                                                        use_coverage,
                                                                        prev_coverage)  # shape=(3, 115, 1)
         # final_dists shape=(3, 1, 30000)
-        # print('final_dists is ', final_dists)
+        # print('final_dists is ', tf.squeeze(final_dists))
         # print('dec_hidden is ', dec_hidden)
         # print('attentions is ', attentions)
         # print('coverages is ', coverages)
         # print('p_gens id ', p_gens)
+        # top_k_probs shape=(3, 6)
+        # top_k_ids shape=(3, 6)
         top_k_probs, top_k_ids = tf.nn.top_k(tf.squeeze(final_dists), k=params["beam_size"] * 2)
         top_k_log_probs = tf.math.log(top_k_probs)
+        # print('top_k_probs is ', top_k_probs)
+        # print('top_k_ids is ', top_k_ids)
+        # print('top_k_log_probs is ', top_k_log_probs)
+        # dec_hidden shape = (3, 256)
+        # attentions, shape = (3, 115)
+        # p_gens shape = (3, 1)
+        # coverages,shape = (3, 115, 1)
         results = {"dec_state": dec_hidden,
                    "attention_vec": attentions,  # [batch_sz, max_len_x, 1]
                    "top_k_ids": top_k_ids,
                    "top_k_log_probs": top_k_log_probs,
                    "p_gen": p_gens,
-                   "prev_coverage": coverages}
+                   }
         return results
 
     # end of the nested class
@@ -102,18 +184,35 @@ def beam_decode(model, batch, vocab, params):
     # We run the encoder once and then we use the results to decode each time step token
     # state shape=(3, 256), enc_outputs shape=(3, 115, 256)
     enc_outputs, state = model.call_encoder(batch[0]["enc_input"])
+    # print('enc_outputs is ', enc_outputs)
     # Initial Hypothesises (beam_size many list)
+    # print('xxxxxxxx is ', batch[0]["enc_input"].shape[1])
+    # hyps = [Hypothesis(tokens=[vocab.word_to_id('[START]')],  # [2]
+    #                    # we initalize all the beam_size hypothesises with the token start
+    #                    log_probs=[0.0],  # Initial log prob = 0
+    #                    # state=state[0],
+    #                    state=state[0],  # shape=(256,)
+    #                    # initial dec_state (we will use only the first dec_state because they're initially the same)
+    #                    attn_dists=[],
+    #                    p_gens=[],  # we init the coverage vector to zero
+    #                    coverage=np.zeros([batch[0]["enc_input"].shape[1], 1], dtype=np.float32))
+    #         for _ in range(params['batch_size'])]  # batch_size == beam_size
+    # hyps = [Hypothesis(tokens=[vocab.word_to_id('[START]')],  # [2]
+    #                    # we initalize all the beam_size hypothesises with the token start
+    #                    log_probs=[0.0],  # Initial log prob = 0
+    #                    # state=state[0],
+    #                    state=state[0],  # shape=(256,)
+    #                    # initial dec_state (we will use only the first dec_state because they're initially the same)
+    #                    attn_dists=[],
+    #                    p_gens=[],  # we init the coverage vector to zero
+    #                    coverage=np.zeros([batch[0]["enc_input"].shape[1], 1], dtype=np.float32))
+    #         for _ in range(params['batch_size'])]  # batch_size == beam_size
     hyps = [Hypothesis(tokens=[vocab.word_to_id('[START]')],
-                       # we initalize all the beam_size hypothesises with the token start
-                       log_probs=[0.0],  # Initial log prob = 0
-                       # state=state[0],
+                       log_probs=[0.0],
                        state=state[0],
-                       # initial dec_state (we will use only the first dec_state because they're initially the same)
-                       attn_dists=[],
-                       p_gens=[],  # we init the coverage vector to zero
-                       coverage=np.zeros([batch[0]["enc_input"].shape[1], 1], dtype=np.float32),
-                       ) for _ in range(params['batch_size'])]  # batch_size == beam_size
-
+                       p_gens=[],
+                       attn_dists=[]) for _ in range(params['batch_size'])]
+    # print('hyps', hyps)
     results = []  # list to hold the top beam_size hypothesises
     steps = 0  # initial step
 
@@ -122,19 +221,36 @@ def beam_decode(model, batch, vocab, params):
         latest_tokens = [h.latest_token for h in hyps]  # latest token for each hypothesis , shape : [beam_size]
         # print('latest_tokens is ', latest_tokens)
         # we replace all the oov is by the unknown token
+        # print(latest_tokens)
         latest_tokens = [t if t in range(params['vocab_size']) else vocab.word_to_id('[UNK]') for t in latest_tokens]
+        # latest_tokens = [t if t in vocab.id2word else vocab.word2id('[UNK]') for t in latest_tokens]
+        # print('latest_tokens is ', latest_tokens)
         # we collect the last states for each hypothesis
+        # print(latest_tokens)
         states = [h.state for h in hyps]
-        prev_coverage = [h.coverage for h in hyps]  # list of coverage vectors (or None)
-        prev_coverage = tf.convert_to_tensor(prev_coverage)
+        # print('states i s', states)
+        # prev_coverage = [h.coverage for h in hyps]  # list of coverage vectors (or None)
+        # print('prev_coverage_1 is ', prev_coverage)
+        # prev_coverage = tf.convert_to_tensor(prev_coverage)
+        # print('prev_coverage_2 is ', prev_coverage)
 
         # we decode the top likely 2 x beam_size tokens tokens at time step t for each hypothesis
         # model, batch, vocab, params
-        dec_input = tf.expand_dims(latest_tokens, axis=1)
+        dec_input = tf.expand_dims(latest_tokens, axis=1)  # shape=(3, 1)
+        # print('dec_input is ', dec_input)
+        # print('step is ', steps)
         # print('dec_input is ', dec_input)
         # print('states is ', states)
         dec_states = tf.stack(states, axis=0)
         # print('dec_states is ', dec_states)
+        # print('batch[0][enc_input] is ', batch[0]['enc_input'])
+        # print('enc_outputs is ', enc_outputs)
+        # print('dec_input is ', dec_input)
+        # print('dec_states is ', dec_states)
+        # print('batch[0][extended_enc_input is ', batch[0]['extended_enc_input'])  # problem maybe
+        # print('batch[0][max_oov_len] is ', batch[0]['max_oov_len'])
+        # print('batch[0][sample_encoder_pad_mask is ', batch[0]['sample_encoder_pad_mask'])
+        # print('prev_coverage is ', prev_coverage)
         returns = decode_onestep(batch[0]['enc_input'],  # shape=(3, 115)
                                  enc_outputs,  # shape=(3, 115, 256)
                                  dec_input,  # shape=(3, 1)
@@ -143,20 +259,26 @@ def beam_decode(model, batch, vocab, params):
                                  batch[0]['max_oov_len'],  # shape=()
                                  batch[0]['sample_encoder_pad_mask'],  # shape=(3, 115)
                                  params['is_coverage'],  # true
-                                 prev_coverage)  # shape=(3, 115, 1)
+                                 prev_coverage=None)  # shape=(3, 115, 1)
         # print('returns["p_gen"] is ', returns["p_gen"])
         # print(np.squeeze(returns["p_gen"]))
-        topk_ids, topk_log_probs, new_states, attn_dists, p_gens, prev_coverages = returns['top_k_ids'],\
+        # np.squeeze(returns["p_gen"])
+        # print('returns is ', returns["p_gen"])
+        topk_ids, topk_log_probs, new_states, attn_dists, p_gens = returns['top_k_ids'],\
                                                                                    returns['top_k_log_probs'],\
                                                                                    returns['dec_state'],\
                                                                                    returns['attention_vec'],\
-                                                                                   np.squeeze(returns["p_gen"]),\
-                                                                                   returns['prev_coverage']
+                                                                                   returns["p_gen"],\
+
+        # print('topk_ids is ', topk_ids)
+        # print('topk_log_probs is ', topk_log_probs)
         all_hyps = []
         num_orig_hyps = 1 if steps == 0 else len(hyps)
         num = 1
+        # print('num_orig_hyps is ', num_orig_hyps)
         for i in range(num_orig_hyps):
-            h, new_state, attn_dist, p_gen, coverage = hyps[i], new_states[i], attn_dists[i], p_gens[i], prev_coverages[i]
+            # h, new_state, attn_dist, p_gen, coverage = hyps[i], new_states[i], attn_dists[i], p_gens[i], prev_coverages[i]
+            h, new_state, attn_dist, p_gen = hyps[i], new_states[i], attn_dists[i], p_gens[i]
             # print('h is ', h)
             # print('new_state is ', new_state) shape=(256,)
             # print('attn_dist ids ', attn_dist) shape=(115,)
@@ -168,15 +290,19 @@ def beam_decode(model, batch, vocab, params):
                 # we extend each hypothesis with each of the top k tokens
                 # (this gives 2 x beam_size new hypothesises for each of the beam_size old hypothesises)
                 # print('topk_ids is ', topk_ids) shape=(3, 6)
+                # print('token is ', topk_log_probs)
                 # print('topk_log_probs is ', topk_log_probs)shape=(3, 6)
                 # print(topk_ids[i, j].numpy())
+                # print('steps is ', steps)
                 # print(topk_log_probs[i, j].numpy())
+                # print('h is ', h.avg_log_prob)
+                # print(coverage)
                 new_hyp = h.extend(token=topk_ids[i, j].numpy(),
-                                   log_prob=topk_log_probs[i, j].numpy(),
+                                   log_prob=topk_log_probs[i, j],
                                    state=new_state,
                                    attn_dist=attn_dist,
                                    p_gen=p_gen,
-                                   coverage=coverage)
+                                   )
                 all_hyps.append(new_hyp)
         # in the following lines, we sort all the hypothesises, and select only the beam_size most likely hypothesises
         hyps = []
@@ -190,7 +316,8 @@ def beam_decode(model, batch, vocab, params):
                 hyps.append(h)
             if len(hyps) == params['beam_size'] or len(results) == params['beam_size']:
                 break
-
+        # print('hyps is ', hyps.)
+        # print('steps is ', steps)
         steps += 1
 
     if len(results) == 0:
@@ -200,6 +327,7 @@ def beam_decode(model, batch, vocab, params):
     # given the input fed to the model
     hyps_sorted = sorted(results, key=lambda h: h.avg_log_prob, reverse=True)
     best_hyp = hyps_sorted[0]
+    # print('best_hyp.tokens is ', best_hyp.tokens)
     best_hyp.abstract = " ".join(output_to_words(best_hyp.tokens, vocab, batch[0]["article_oovs"][0])[1:-1])
     best_hyp.text = batch[0]["article"].numpy()[0].decode()
     print('best_hyp is ', best_hyp.abstract)

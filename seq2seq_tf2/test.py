@@ -1,7 +1,7 @@
 import tensorflow as tf
 from seq2seq_tf2.seq2seq_model import PGN
 from seq2seq_tf2.batcher import Vocab, batcher
-from seq2seq_tf2.test_helper import beam_decode
+from seq2seq_tf2.test_helper import beam_decode, batch_greedy_decode
 from tqdm import tqdm
 
 
@@ -30,7 +30,7 @@ def test(params):
     ckpt.restore(ckpt_manager.latest_checkpoint)
     print("Model restored")
     for batch in b:
-        yield beam_decode(model, batch, vocab, params)
+        yield batch_greedy_decode(model, batch, vocab, params)
 
 
 def test_and_save(params):

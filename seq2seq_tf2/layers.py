@@ -56,11 +56,23 @@ class BahdanauAttention(tf.keras.layers.Layer):
         # att_features = self.W1(enc_output) + self.W2(hidden_with_time_axis)
 
         def masked_attention(score):
-            mask = tf.cast(enc_padding_mask, dtype=score.dtype)
-            masked_score = tf.squeeze(score, axis=-1) * mask
-            masked_score = tf.expand_dims(masked_score, axis=2)
-            attention_weights = tf.nn.softmax(masked_score, axis=1)
-            return attention_weights
+            """
+
+            :param score: shape=(16, 200, 1)
+                        ...
+              [-0.50474256]
+              [-0.47997713]
+              [-0.42284346]]]
+            :return:
+            """
+            attn_dist = tf.squeeze(score, axis=2)  # shape=(16, 200)
+            attn_dist = tf.nn.softmax(attn_dist, axis=1)  # shape=(16, 200)
+            mask = tf.cast(enc_padding_mask, dtype=attn_dist.dtype)
+            attn_dist *= mask
+            masked_sums = tf.reduce_sum(attn_dist, axis=1)
+            attn_dist = attn_dist / tf.reshape(masked_sums, [-1, 1])
+
+            return attn_dist
 
         if use_coverage and prev_coverage is not None:  # non-first step of coverage
             # Multiply coverage vector by w_c to get coverage_features.
@@ -69,7 +81,6 @@ class BahdanauAttention(tf.keras.layers.Layer):
             e = self.V(tf.nn.tanh(self.W1(enc_output) + self.W2(hidden_with_time_axis) + self.Wc(prev_coverage)))
             # Calculate attention distribution
             attn_dist = masked_attention(e)
-
             # Update coverage vector
             coverage = attn_dist + prev_coverage
 
@@ -84,6 +95,7 @@ class BahdanauAttention(tf.keras.layers.Layer):
                 coverage = []
 
         # context_vector shape after sum == (batch_size, hidden_size)
+        attn_dist = tf.expand_dims(attn_dist, axis=2)
         context_vector = attn_dist * enc_output  # shape=(16, 200, 256)
         context_vector = tf.reduce_sum(context_vector, axis=1)  # shape=(16, 256)
         # tf.squeeze(attn_dist, -1)  shape=(16, 200)
@@ -103,7 +115,7 @@ class Decoder(tf.keras.layers.Layer):
                                        return_sequences=True,
                                        return_state=True,
                                        recurrent_initializer='glorot_uniform')
-        self.fc = tf.keras.layers.Dropout(0.5)
+        # self.fc = tf.keras.layers.Dropout(0.5)
         self.fc = tf.keras.layers.Dense(vocab_size, activation=tf.keras.activations.softmax)
 
     def call(self, x, hidden, enc_output, context_vector):
