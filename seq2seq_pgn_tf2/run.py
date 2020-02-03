@@ -4,10 +4,9 @@ sys.path.insert(0, '/env/pycharm')
 print(sys.path)
 import tensorflow as tf
 import argparse
-from seq2seq_tf2.train import train
-from seq2seq_tf2.test import test_and_save
+from seq2seq_pgn_tf2.train import train
+from seq2seq_pgn_tf2.test import test_and_save
 from utils.log_utils import define_logger
-from seq2seq_tf2.config import test_data_path
 import os
 import pathlib
 
@@ -25,7 +24,7 @@ def main():
                         help="maximum number of words of the predicted abstract", type=int)
     parser.add_argument("--min_dec_steps", default=30,
                         help="Minimum number of words of the predicted abstract", type=int)
-    parser.add_argument("--batch_size", default=16, help="batch size", type=int)
+    parser.add_argument("--batch_size", default=8, help="batch size", type=int)
     parser.add_argument("--beam_size", default=3,
                         help="beam size for beam search decoding (must be equal to batch size in decode mode)",
                         type=int)
@@ -64,16 +63,14 @@ def main():
     parser.add_argument("--epochs", default=30, help="train epochs", type=int)
     # mode
     parser.add_argument("--mode", default='train', help="training, eval or test options")
-    parser.add_argument("--pointer_gen", default=True, help="training, eval or test options")
-    parser.add_argument("--is_coverage", default=True, help="is_coverage")
+    parser.add_argument("--pointer_gen", default=False, help="training, eval or test options")
+    parser.add_argument("--is_coverage", default=False, help="is_coverage")
     parser.add_argument("--greedy_decode", default=False, help="greedy_decoder")
 
     args = parser.parse_args()
     params = vars(args)
 
     if params["mode"] == "train":
-        # print(test_data_path)
-        # print(params["train_seg_y_dir"])
         train(params)
 
     elif params["mode"] == "test":

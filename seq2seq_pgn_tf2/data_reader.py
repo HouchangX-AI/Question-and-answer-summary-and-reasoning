@@ -65,12 +65,9 @@ def build_vocab(items, sort=True, min_count=0, lower=False):
 
 
 if __name__ == '__main__':
-    print('../datasets/train_set.seg_x.txt')
     lines = read_data('../datasets/train_set.seg_x.txt',
                       '../datasets/train_set.seg_y.txt',
                       '../datasets/test_set.seg_x.txt')
-    print('lines is ', lines)
     vocab, reverse_vocab = build_vocab(lines)
-    print('vox is ', vocab)
     save_word_dict(vocab, '../datasets/vocab.txt')
 

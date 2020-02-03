@@ -157,7 +157,7 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
         dataset_train_x = tf.data.TextLineDataset(train_x_path)
         dataset_train_y = tf.data.TextLineDataset(train_y_path)
         train_dataset = tf.data.Dataset.zip((dataset_train_x, dataset_train_y))
-        # train_dataset = train_dataset.shuffle(10, reshuffle_each_iteration=True).repeat()
+        train_dataset = train_dataset.shuffle(16, reshuffle_each_iteration=True).repeat()
 
         for raw_record in train_dataset:
             article = raw_record[0].numpy().decode("utf-8")

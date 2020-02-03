@@ -45,8 +45,8 @@ def build(train_x_seg_path, test_y_seg_path, test_seg_path, out_path=None, sente
     w2v.wv.save_word2vec_format(w2v_bin_path, binary=True)
     print("save %s ok." % w2v_bin_path)
     # test
-    # sim = w2v.wv.similarity('大', '小')
-    # print('大 vs 小 similarity score:', sim)
+    sim = w2v.wv.similarity('技师', '车主')
+    print('技师 vs 车主 similarity score:', sim)
     # load model
     model = KeyedVectors.load_word2vec_format(w2v_bin_path, binary=True)
     word_dict = {}
@@ -56,5 +56,10 @@ def build(train_x_seg_path, test_y_seg_path, test_seg_path, out_path=None, sente
 
 
 if __name__ == '__main__':
-    pass
+    build('../datasets/train_set.seg_x.txt',
+          '../datasets/train_set.seg_y.txt',
+          '../datasets/test_set.seg_x.txt',
+          out_path='../datasets/word2vec.txt',
+          sentence_path='../datasets/sentences.txt',
+          )
 
