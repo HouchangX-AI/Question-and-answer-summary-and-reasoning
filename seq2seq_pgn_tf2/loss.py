@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
+loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False, reduction='none')
 
 
 def loss_function(real, pred, padding_mask, attn_dists, cov_loss_wt, use_coverage):
@@ -9,24 +9,25 @@ def loss_function(real, pred, padding_mask, attn_dists, cov_loss_wt, use_coverag
         loss = pgn_log_loss_function(real, pred, padding_mask) + cov_loss_wt * _coverage_loss(attn_dists, padding_mask)
         return loss
     else:
-        return seq2seq_loss_function(real, pred)
+        return seq2seq_loss_function(real, pred, padding_mask)
 
 
-def seq2seq_loss_function(real, pred):
+def seq2seq_loss_function(real, pred, padding_mask):
     """
     跑seq2seq时用的Loss
     :param real: shape=(16, 50)
     :param pred: shape=(16, 50, 30000)
     :return:
     """
-    mask = tf.math.logical_not(tf.math.equal(real, 1))
-    dec_lens = tf.reduce_sum(tf.cast(mask, dtype=tf.float32), axis=-1)
-    loss_ = loss_object(real, pred)
-    mask = tf.cast(mask, dtype=loss_.dtype)
-    loss_ *= mask
-    # we have to make sure no empty abstract is being used otherwise dec_lens may contain null values
-    # loss_ = tf.reduce_sum(loss_, axis=-1) / dec_lens
-    return tf.reduce_mean(loss_)
+    loss = 0
+    for t in range(real.shape[1]):
+        loss_ = loss_object(real[:, t], pred[:, t])
+        mask = tf.cast(padding_mask[:, t], dtype=loss_.dtype)
+        mask = tf.cast(mask, dtype=loss_.dtype)
+        loss_ *= mask
+        loss_ = tf.reduce_mean(loss_)
+        loss += loss_
+    return loss / real.shape[1]
 
 
 def pgn_log_loss_function(real, final_dists, padding_mask):

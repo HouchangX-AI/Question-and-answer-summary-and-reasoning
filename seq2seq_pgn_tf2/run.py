@@ -24,7 +24,7 @@ def main():
                         help="maximum number of words of the predicted abstract", type=int)
     parser.add_argument("--min_dec_steps", default=30,
                         help="Minimum number of words of the predicted abstract", type=int)
-    parser.add_argument("--batch_size", default=8, help="batch size", type=int)
+    parser.add_argument("--batch_size", default=16, help="batch size", type=int)
     parser.add_argument("--beam_size", default=3,
                         help="beam size for beam search decoding (must be equal to batch size in decode mode)",
                         type=int)

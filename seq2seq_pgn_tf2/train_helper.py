@@ -53,10 +53,10 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
                               batch[1]["sample_decoder_pad_mask"])  # shape=(16, 50)
 
             step += 1
-            if step % 2 == 0:
+            if step % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, step, loss.numpy()))
 
-        if (epoch + 1) % 1 == 0:
+        if epoch % 1 == 0:
             ckpt_save_path = ckpt_manager.save()
             print('Saving checkpoint for epoch {} at {} ,best loss {}'.format(epoch + 1, ckpt_save_path, loss))
             print('Epoch {} Loss {:.4f}'.format(epoch + 1, loss))
