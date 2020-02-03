@@ -47,3 +47,5 @@ https://github.com/Abner1zhou/Q-A-Summary-and-Reasoning
 pytorch版本的PGN模型
 
 https://github.com/425776024/summary
+
+https://github.com/quanterk/pgn_summarization_for_baidu_competition
