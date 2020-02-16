@@ -57,6 +57,7 @@ def main():
     parser.add_argument("--test_save_dir", default='../datasets/', help="test_save_dir")
 
     # others
+    parser.add_argument("--steps_per_epoch", default=8087, help="max_train_steps", type=int)
     parser.add_argument("--checkpoints_save_steps", default=10, help="Save checkpoints every N steps", type=int)
     parser.add_argument("--max_steps", default=10000, help="Max number of iterations", type=int)
     parser.add_argument("--num_to_test", default=10, help="Number of examples to test", type=int)
@@ -80,5 +81,5 @@ def main():
 if __name__ == '__main__':
     gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
     if gpus:
-        tf.config.experimental.set_visible_devices(devices=gpus[1], device_type='GPU')
+        tf.config.experimental.set_visible_devices(devices=gpus[0], device_type='GPU')
     main()

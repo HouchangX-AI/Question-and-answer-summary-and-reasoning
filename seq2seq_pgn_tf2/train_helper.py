@@ -43,7 +43,8 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
     for epoch in range(params['epochs']):
         t0 = time.time()
         step = 0
-        for batch in dataset:
+        for step, batch in enumerate(dataset.take(params['steps_per_epoch'])):
+        # for batch in dataset:
             loss = train_step(batch[0]["enc_input"],  # shape=(16, 200)
                               batch[0]["extended_enc_input"],  # shape=(16, 200)
                               batch[1]["dec_input"],  # shape=(16, 50)
@@ -61,31 +62,3 @@ def train_model(model, dataset, params, ckpt, ckpt_manager):
             print('Saving checkpoint for epoch {} at {} ,best loss {}'.format(epoch + 1, ckpt_save_path, loss))
             print('Epoch {} Loss {:.4f}'.format(epoch + 1, loss))
             print('Time taken for 1 epoch {} sec\n'.format(time.time() - t0))
-
-
-    # try:
-    #     for batch in dataset:
-    #         t0 = time.time()
-    #         loss = train_step(batch[0]["enc_input"],
-    #                           batch[0]["extended_enc_input"],
-    #                           batch[1]["dec_input"],
-    #                           batch[1]["dec_target"],
-    #                           batch[0]["max_oov_len"],
-    #                           batch[0]["sample_encoder_pad_mask"],
-    #                           batch[1]["sample_decoder_pad_mask"],
-    #                           )
-    #         print('Step {}, time {:.4f}, Loss {:.4f}'.format(int(ckpt.step),
-    #                                                          time.time() - t0,
-    #                                                          loss.numpy()))
-    #         if int(ckpt.step) == params["max_steps"]:
-    #             ckpt_manager.save(checkpoint_number=int(ckpt.step))
-    #             print("Saved checkpoint for step {}".format(int(ckpt.step)))
-    #             break
-    #         if int(ckpt.step) % params["checkpoints_save_steps"] == 0:
-    #             ckpt_manager.save(checkpoint_number=int(ckpt.step))
-    #             print("Saved checkpoint for step {}".format(int(ckpt.step)))
-    #         ckpt.step.assign_add(1)
-    #
-    # except KeyboardInterrupt:
-    #     ckpt_manager.save(int(ckpt.step))
-    #     print("Saved checkpoint for step {}".format(int(ckpt.step)))
