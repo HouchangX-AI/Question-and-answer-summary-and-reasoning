@@ -1,5 +1,5 @@
 import tensorflow as tf
-from seq2seq_pgn_tf2.layers import 
+# from seq2seq_pgn_tf2.layers import 
 
 
 def point_wise_feed_forward_network(d_model, dff):
@@ -9,3 +9,4 @@ def point_wise_feed_forward_network(d_model, dff):
     ])
 
 
+ 
