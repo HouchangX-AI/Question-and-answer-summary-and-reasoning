@@ -29,28 +29,24 @@ def batch_greedy_decode(model, enc_data, vocab, params):
     for t in range(params['max_dec_len']):
         # 单步预测
         # final_dist (batch_size, 1, vocab_size+batch_oov_len)
-        final_dists, dec_hidden, attentions, p_gens = model(enc_output,  # shape=(3, 115, 256)
-                                                            dec_hidden,  # shape=(3, 256)
-                                                            inputs,  # shape=(3, 115)
-                                                            enc_data[0]['extended_enc_input'],  # shape=(3, 115)
-                                                            dec_input,  # shape=(3, 1)
-                                                            batch_oov_len,  # shape=()
-                                                            enc_data[0]['sample_encoder_pad_mask'],  # shape=(3, 115)
-                                                            params['is_coverage'],
-                                                            prev_coverage=None)  # shape=(3, 115, 1)
-        # final_dist, dec_hidden, coverage = decode_one_step(params, model,
-        #                                                    enc_data["extended_enc_input"],
-        #                                                    batch_oov_len,
-        #                                                    dec_input,
-        #                                                    dec_hidden,
-        #                                                    enc_output,
-        #                                                    enc_data["enc_mask"],
-        #                                                    coverage,
-        #                                                    batch_size,
-        #                                                    use_coverage=True)
-        # print('final_dists is ', final_dists)
+        if params["model"] == "SequenceToSequence":
+                outputs = model(enc_output,  # shape=(3, 200, 256)
+                                dec_hidden,  # shape=(3, 256)
+                                inputs,  # shape=(3, 200)
+                                dec_input)  # shape=(3, 50)
+        elif params["model"] == "PGN":
+            outputs = model(enc_output,  # shape=(3, 200, 256)
+                            dec_hidden,  # shape=(3, 256)
+                            inputs,  # shape=(3, 200)
+                            enc_extended_inp,  # shape=(3, 200)
+                            dec_input,  # shape=(3, 50)
+                            batch_oov_len,  # shape=()
+                            enc_padding_mask,  # shape=(3, 200)
+                            params['is_coverage'],
+                            prev_coverage=None)
+                
         # id转换
-        final_dist = tf.squeeze(final_dists, axis=1)
+        final_dist = tf.squeeze(outputs["logits"], axis=1)
         # print(final_dist)
         predicted_ids = tf.argmax(final_dist, axis=1)
         # print(predicted_ids)

@@ -25,19 +25,18 @@ def remove_words(words_list):
 
 def parse_data(train_path, test_path):
     train_df = pd.read_csv(train_path, encoding='utf-8')
-    train_df.dropna(subset=['Question', 'Dialogue', 'Report'], how='any', inplace=True)
+    train_df.dropna(subset=['Report'], how='any', inplace=True)
+    train_df.fillna('', inplace=True)
     train_x = train_df.Question.str.cat(train_df.Dialogue)
     train_y = []
     if 'Report' in train_df.columns:
         train_y = train_df.Report
+        assert len(train_x) == len(train_y)
 
     test_df = pd.read_csv(test_path, encoding='utf-8')
-    test_df.dropna(subset=['Question', 'Dialogue'], how='any', inplace=True)
+    test_df.fillna('', inplace=True)
     test_x = test_df.Question.str.cat(test_df.Dialogue)
     test_y = []
-    print('train_x is ', len(train_x))
-    print('train_y is ', len(train_y))
-    print('test_x is ', len(test_x))
     return train_x, train_y, test_x, test_y
 
 

@@ -1,5 +1,6 @@
 import tensorflow as tf
-from seq2seq_pgn_tf2.seq2seq_model import PGN
+from seq2seq_pgn_tf2.models.sequence_to_sequence import SequenceToSequence
+from seq2seq_pgn_tf2.models.pgn import PGN
 from seq2seq_pgn_tf2.batcher import Vocab, batcher
 from seq2seq_pgn_tf2.test_helper import beam_decode, batch_greedy_decode
 from tqdm import tqdm
@@ -10,7 +11,10 @@ def test(params):
     assert params["beam_size"] == params["batch_size"], "Beam size must be equal to batch_size, change the params"
 
     print("Building the model ...")
-    model = PGN(params)
+    if params["model"] == "SequenceToSequence":
+        model = SequenceToSequence(params)
+    elif params["model"] == "PGN":
+        model = PGN(params)
 
     print("Creating the vocab ...")
     vocab = Vocab(params["vocab_path"], params["vocab_size"])
@@ -19,9 +23,12 @@ def test(params):
     b = batcher(vocab, params)
 
     print("Creating the checkpoint manager")
-    checkpoint_dir = "{}".format(params["model_dir"])
-    print('checkpoint_dir is ', checkpoint_dir)
-    ckpt = tf.train.Checkpoint(step=tf.Variable(0), PGN=model)
+    if params["model"] == "SequenceToSequence":
+        checkpoint_dir = "{}/checkpoint".format(params["seq2seq_model_dir"])
+        ckpt = tf.train.Checkpoint(step=tf.Variable(0), SequenceToSequence=model)
+    elif params["model"] == "PGN":
+        checkpoint_dir = "{}/checkpoint".format(params["pgn_model_dir"])
+        ckpt = tf.train.Checkpoint(step=tf.Variable(0), PGN=model)
     ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_dir, max_to_keep=5)
 
     # path = params["model_path"] if params["model_path"] else ckpt_manager.latest_checkpoint

@@ -32,6 +32,8 @@ seq2seq_paddle是使用paddlepaddle搭建的模型（暂停开发）
 ## seq2seq_pgn_tf2文件下PGN模型(改用transformer单元结构)
 开发中。。。
 
+
+
 # 优秀作业分享
 ## HCT一期
 tf2版本的PGN模型

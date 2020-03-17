@@ -1,10 +1,12 @@
 import tensorflow as tf
 
 
-loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False, reduction='none')
+loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
 
 
-def loss_function(real, pred, padding_mask, attn_dists, cov_loss_wt, use_coverage):
+def loss_function(real, outputs, padding_mask, cov_loss_wt, use_coverage):
+    pred = outputs["logits"]
+    attn_dists = outputs["attentions"]
     if use_coverage:
         loss = pgn_log_loss_function(real, pred, padding_mask) + cov_loss_wt * _coverage_loss(attn_dists, padding_mask)
         return loss

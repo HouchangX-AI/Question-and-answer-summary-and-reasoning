@@ -1,12 +1,21 @@
 # coding=utf-8
 import sys
-sys.path.insert(0, '/env/pycharm')
-print(sys.path)
+import os
+
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# sys.path.insert(0, BASE_DIR)
+# sys.path.append(os.getcwd())
+
+
+# print(os.getcwd())
+sys.path.append(BASE_DIR)
+# print('333333333', BASE_DIR)
 import tensorflow as tf
 import argparse
-from seq2seq_pgn_tf2.train import train
+from seq2seq_pgn_tf2 import train
 from seq2seq_pgn_tf2.test import test_and_save
-from utils.log_utils import define_logger
+# from utils.log_utils import define_logger
 import os
 import pathlib
 
@@ -24,7 +33,7 @@ def main():
                         help="maximum number of words of the predicted abstract", type=int)
     parser.add_argument("--min_dec_steps", default=30,
                         help="Minimum number of words of the predicted abstract", type=int)
-    parser.add_argument("--batch_size", default=16, help="batch size", type=int)
+    parser.add_argument("--batch_size", default=3, help="batch size", type=int)
     parser.add_argument("--beam_size", default=3,
                         help="beam size for beam search decoding (must be equal to batch size in decode mode)",
                         type=int)
@@ -46,15 +55,17 @@ def main():
                         type=float)
 
     # path
-    parser.add_argument("--model_dir", default='./ckpt/checkpoint', help="Model folder")
+    # /ckpt/checkpoint/checkpoint
+    parser.add_argument("--seq2seq_model_dir", default='{}/ckpt/seq2seq'.format(BASE_DIR), help="Model folder")
+    parser.add_argument("--pgn_model_dir", default='{}/ckpt/pgn'.format(BASE_DIR), help="Model folder")
     parser.add_argument("--model_path", help="Path to a specific model", default="", type=str)
-    parser.add_argument("--train_seg_x_dir", default='../datasets/train_set.seg_x.txt', help="train_seg_x_dir")
-    parser.add_argument("--train_seg_y_dir", default='../datasets/train_set.seg_y.txt', help="train_seg_y_dir")
-    parser.add_argument("--test_seg_x_dir", default='../datasets/test_set.seg_x.txt', help="test_seg_x_dir")
-    parser.add_argument("--vocab_path", default='../datasets/vocab.txt', help="Vocab path")
-    parser.add_argument("--word2vec_output", default='../datasets/word2vec.txt', help="Vocab path")
+    parser.add_argument("--train_seg_x_dir", default='{}/datasets/train_set.seg_x.txt'.format(BASE_DIR), help="train_seg_x_dir")
+    parser.add_argument("--train_seg_y_dir", default='{}/datasets/train_set.seg_y.txt'.format(BASE_DIR), help="train_seg_y_dir")
+    parser.add_argument("--test_seg_x_dir", default='{}/datasets/test_set.seg_x.txt'.format(BASE_DIR), help="test_seg_x_dir")
+    parser.add_argument("--vocab_path", default='{}/datasets/vocab.txt'.format(BASE_DIR), help="Vocab path")
+    parser.add_argument("--word2vec_output", default='{}/datasets/word2vec.txt'.format(BASE_DIR), help="Vocab path")
     parser.add_argument("--log_file", help="File in which to redirect console outputs", default="", type=str)
-    parser.add_argument("--test_save_dir", default='../datasets/', help="test_save_dir")
+    parser.add_argument("--test_save_dir", default='{}/datasets/'.format(BASE_DIR), help="test_save_dir")
 
     # others
     parser.add_argument("--steps_per_epoch", default=8087, help="max_train_steps", type=int)
@@ -62,24 +73,40 @@ def main():
     parser.add_argument("--max_steps", default=10000, help="Max number of iterations", type=int)
     parser.add_argument("--num_to_test", default=10, help="Number of examples to test", type=int)
     parser.add_argument("--epochs", default=30, help="train epochs", type=int)
+    
+    # transformer
+    parser.add_argument('--d_model', default=512, type=int,
+                        help="hidden dimension of encoder/decoder")
+    parser.add_argument('--num_blocks', default=6, type=int,
+                        help="number of encoder/decoder blocks")
+    parser.add_argument('--num_heads', default=8, type=int,
+                        help="number of attention heads")
+    parser.add_argument('--dff', default=2048, type=int,
+                        help="hidden dimension of feedforward layer")
+    parser.add_argument('--dropout_rate', default=0.1, type=float)
+    
     # mode
     parser.add_argument("--mode", default='train', help="training, eval or test options")
-    parser.add_argument("--pointer_gen", default=False, help="training, eval or test options")
-    parser.add_argument("--is_coverage", default=False, help="is_coverage")
+    parser.add_argument("--model", default='PGN', help="which model to be slected")
+    parser.add_argument("--pointer_gen", default=True, help="training, eval or test options")
+    parser.add_argument("--is_coverage", default=True, help="is_coverage")
     parser.add_argument("--greedy_decode", default=False, help="greedy_decoder")
+    parser.add_argument("--transformer", default=False, help="transformer")
 
     args = parser.parse_args()
     params = vars(args)
 
+    gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
+    # print('grus is ', gpus)
+    if gpus:
+        tf.config.experimental.set_visible_devices(devices=gpus[1], device_type='GPU')
+
     if params["mode"] == "train":
-        train(params)
+        train.train(params)
 
     elif params["mode"] == "test":
         test_and_save(params)
 
 
 if __name__ == '__main__':
-    gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
-    if gpus:
-        tf.config.experimental.set_visible_devices(devices=gpus[0], device_type='GPU')
     main()

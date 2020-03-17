@@ -158,7 +158,7 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
         dataset_train_y = tf.data.TextLineDataset(train_y_path)
         train_dataset = tf.data.Dataset.zip((dataset_train_x, dataset_train_y))
         train_dataset = train_dataset.shuffle(16, reshuffle_each_iteration=True).repeat()
-
+        # i = 0
         for raw_record in train_dataset:
             article = raw_record[0].numpy().decode("utf-8")
             abstract = raw_record[1].numpy().decode("utf-8")
@@ -203,7 +203,6 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
                 "sample_decoder_pad_mask": sample_decoder_pad_mask,
                 "sample_encoder_pad_mask": sample_encoder_pad_mask,
             }
-
             yield output
 
     if mode == "test":
