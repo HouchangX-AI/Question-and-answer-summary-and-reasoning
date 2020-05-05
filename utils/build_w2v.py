@@ -1,7 +1,9 @@
 from gensim.models import Word2Vec
 from gensim.models.word2vec import LineSentence
 from gensim.models.keyedvectors import KeyedVectors
-from utils.data_utils import dump_pkl
+from data_utils import dump_pkl
+import os
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def read_lines(path, col_sep=None):
@@ -56,10 +58,9 @@ def build(train_x_seg_path, test_y_seg_path, test_seg_path, out_path=None, sente
 
 
 if __name__ == '__main__':
-    build('../datasets/train_set.seg_x.txt',
-          '../datasets/train_set.seg_y.txt',
-          '../datasets/test_set.seg_x.txt',
-          out_path='../datasets/word2vec.txt',
-          sentence_path='../datasets/sentences.txt',
-          )
+    build('{}/datasets/train_set.seg_x.txt'.format(BASE_DIR),
+          '{}/datasets/train_set.seg_y.txt'.format(BASE_DIR),
+          '{}/datasets/test_set.seg_x.txt'.format(BASE_DIR),
+          out_path='{}/datasets/word2vec.txt'.format(BASE_DIR),
+          sentence_path='{}/datasets/sentences.txt'.format(BASE_DIR))
 
