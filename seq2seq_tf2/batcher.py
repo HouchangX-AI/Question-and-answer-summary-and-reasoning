@@ -167,13 +167,9 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
             stop_decoding = vocab.word_to_id(STOP_DECODING)
 
             article_words = article.split()[:max_enc_len]
-            # print('article_words is ', article_words)
-            # print('lens is ', len(article_words))
             enc_len = len(article_words)
             # 添加mark标记
-            # print('enc_len is', enc_len)
             sample_encoder_pad_mask = [1 for _ in range(enc_len)]
-            # print('sample_encoder_pad_mask is', sample_encoder_pad_mask)
 
             enc_input = [vocab.word_to_id(w) for w in article_words]
             enc_input_extend_vocab, article_oovs = article_to_ids(article_words, vocab)
@@ -183,16 +179,11 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
             abs_ids = [vocab.word_to_id(w) for w in abstract_words]
             # abs_ids_extend_vocab = abstract_to_ids(abstract_words, vocab, article_oovs)
             dec_input, target = get_dec_inp_targ_seqs(abs_ids, max_dec_len, start_decoding, stop_decoding)
-            # print('dec_input is ', dec_input)
-            # exit()
             # _, target = get_dec_inp_targ_seqs(abs_ids_extend_vocab, max_dec_len, start_decoding, stop_decoding)
-            # print('target i s', target)
 
             dec_len = len(dec_input)
             # 添加mark标记
-            # print('dec_len ids ', dec_len)
             sample_decoder_pad_mask = [1 for _ in range(dec_len)]
-            # print('sample_decoder_pad_mask is ', sample_decoder_pad_mask)
 
             output = {
                 "enc_len": enc_len,
@@ -213,7 +204,6 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
     if mode == "test":
         test_dataset = tf.data.TextLineDataset(test_x_path)
         for raw_record in test_dataset:
-            # print('raw_record', raw_record)
             article = raw_record.numpy().decode("utf-8")
             article_words = article.split()[:max_enc_len]
             enc_len = len(article_words)

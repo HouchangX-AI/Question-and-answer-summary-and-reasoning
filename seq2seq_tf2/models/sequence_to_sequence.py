@@ -39,10 +39,9 @@ class SequenceToSequence(tf.keras.Model):
         attentions = []
         context_vector, _ = self.attention(dec_hidden,  # shape=(16, 256)
                                            enc_output) # shape=(16, 200, 256)
-        # time.sleep(10)
+
         for t in range(dec_tar.shape[1]): # 50
             # Teachering Forcing
-            # print('tf.expand_dims(dec_tar[:, t], 1) is ', tf.expand_dims(dec_tar[:, t], 1))
             _, pred, dec_hidden = self.decoder(tf.expand_dims(dec_inp[:, t], 1),
                                                dec_hidden,
                                                enc_output,

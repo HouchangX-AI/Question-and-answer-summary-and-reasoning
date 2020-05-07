@@ -58,10 +58,7 @@ def test(params):
 
     # path = params["model_path"] if params["model_path"] else ckpt_manager.latest_checkpoint
     # path = ckpt_manager.latest_checkpoint
-    # print('path is ', path)
-    # print('ckpt_manager.latest_checkpoint is ', ckpt_manager.latest_checkpoint)
     ckpt.restore(ckpt_manager.latest_checkpoint)
-    # print("........", ckpt_manager.latest_checkpoint)
     print("Model restored")
     # for batch in b:
     #     yield batch_greedy_decode(model, batch, vocab, params)
@@ -72,7 +69,6 @@ def test(params):
 
 def predict_result(model, params, vocab, result_save_path):
     dataset = batcher(vocab, params)
-    # print('dataset is ', dataset)
     # 预测结果
     results = greedy_decode(model, dataset, vocab, params)
     results = list(map(lambda x: x.replace(" ",""), results))
@@ -84,13 +80,8 @@ def predict_result(model, params, vocab, result_save_path):
 
 def save_predict_result(results, params):
     # 读取结果
-    # print('results is ', results)
     test_df = pd.read_csv(params['test_x_dir'])
     # 填充结果
-    # print('result lens is ', len(results))
-    # print('result si ', results)
-    # print('test_df is ', test_df)
-    # print('QID is ', test_df['QID'])
     test_df['Prediction'] = results[:20000]
     # 　提取ID和预测结果两列
     test_df = test_df[['QID', 'Prediction']]

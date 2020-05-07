@@ -36,7 +36,7 @@ def main():
     parser.add_argument("--attn_units", default=256,
                         help="[context vector, decoder state, decoder input] feedforward result dimension - "
                              "this result is used to compute the attention weights", type=int)
-    parser.add_argument("--learning_rate", default=0.001, help="Learning rate", type=float)
+    parser.add_argument("--learning_rate", default=0.00001, help="Learning rate", type=float)
     parser.add_argument("--adagrad_init_acc", default=0.1,
                         help="Adagrad optimizer initial accumulator value. Please refer to the Adagrad optimizer "
                              "API documentation on tensorflow site for more details.", type=float)
@@ -79,7 +79,7 @@ def main():
     gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
 
     if gpus:
-        tf.config.experimental.set_visible_devices(devices=gpus[2], device_type='GPU')
+        tf.config.experimental.set_visible_devices(devices=gpus[3], device_type='GPU')
 
     if params["mode"] == "train":
         params["steps_per_epoch"] = NUM_SAMPLES//params["batch_size"]

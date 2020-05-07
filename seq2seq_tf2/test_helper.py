@@ -8,96 +8,49 @@ import math
 def greedy_decode(model, dataset, vocab, params):
     # 存储结果
     batch_size = params["batch_size"]
-    # print('batch_size is ', batch_size)
-    # exit()
     results = []
 
     sample_size = 20000
     # batch 操作轮数 math.ceil向上取整 小数 +1
     # 因为最后一个batch可能不足一个batch size 大小 ,但是依然需要计算
     steps_epoch = sample_size // batch_size + 1
-    # print('steps_epoch is ', steps_epoch)
     
-    # steps_epoch = math.ceil(sample_size / batch_size)
-    # [0,steps_epoch)
-    # for i in tqdm(range(steps_epoch)):
-    
-    # [0,steps_epoch)
-    # ds = iter(dataset)
     for i in tqdm(range(steps_epoch)):
         enc_data, _ = next(iter(dataset))
-        # next(iter(dataset))
-        # print('enc_data is ', enc_data)
-        # enc_data = dataset[i * batch_size: (i+1) * batch_size]
         results += batch_greedy_decode(model, enc_data, vocab, params)
     return results
 
 
 def batch_greedy_decode(model, enc_data, vocab, params):
     # 判断输入长度
-    # print('enc_data[0]["enc_input"] is ', enc_data)
     batch_data = enc_data["enc_input"]
     batch_size = enc_data["enc_input"].shape[0]
-    # print('batch_data is ', batch_data)
-    # print('batch_size is ', batch_size)
     # 开辟结果存储list
     predicts = [''] * batch_size
-    inputs = batch_data # shape=(3, 115)
-    # print('inputs is ', inputs)
-    # exit()
-    
+    # inputs = batch_data # shape=(3, 115)
+    inputs = tf.convert_to_tensor(batch_data)
+    # hidden = [tf.zeros((batch_size, params['enc_units']))]
+    # enc_output, enc_hidden = model.encoder(inputs, hidden)
     enc_output, enc_hidden = model.call_encoder(inputs)
-    # print('enc_output is ', enc_output)
-    # print('enc_hidden is ', enc_hidden)
+
     dec_hidden = enc_hidden
     # dec_input = tf.expand_dims([vocab.word_to_id(vocab.START_DECODING)] * batch_size, 1)
-    dec_input = tf.constant([vocab.word_to_id('[START]')] * batch_size)
+    dec_input = tf.constant([2] * batch_size)
     dec_input = tf.expand_dims(dec_input, axis=1)
-    # print('dec_input is ', dec_input)
-    # exit()
     
     context_vector, _ = model.attention(dec_hidden, enc_output)
-    # print('context_vector is ', context_vector)
     for t in range(params['max_dec_len']):
         # 单步预测
-        context_vector, _ = model.attention(dec_hidden, enc_output)
-        # final_dist (batch_size, 1, vocab
-        # _size+batch_oov_len)
-        # print('t is ', t)
-        # print('dec_input is ', dec_input[0])
         _, pred, dec_hidden = model.decoder(dec_input, dec_hidden, enc_output, context_vector)
-        # print('pred is ', pred)
-        # exit()
-        # _, pred, dec_hidden = self.decoder(tf.expand_dims(dec_tar[:, t], 1),
-        #                                        dec_hidden,
-        #                                        enc_output,
-        #                                        context_vector)
-        # id转换
-        # final_dist = tf.squeeze(pred, axis=1)
-        # print(final_dist)
+
+        context_vector, _ = model.attention(dec_hidden, enc_output)
         predicted_ids = tf.argmax(pred, axis=1).numpy()
-        # print('predicted_ids is ', predicted_ids)
-        # exit()
 
         for index, predicted_id in enumerate(predicted_ids):
-            # print('index is ', index)
-            # print('predicted_id is ', predicted_id)
-            # print('vocab.id_to_word(predicted_id) is ', vocab.id_to_word(predicted_id))
-            # print('predicts is ', predicts)
             predicts[index] += vocab.id_to_word(predicted_id) + ' '
-            # print('xxxxxxxxx is ', predicts)
-        # exit()
-            # print('predicts is ', predicts)
-            # break
-        # if t == 40:
-        #     print('predicts is ', predicts)
-        #     exit()
-        # print(predicts)
+        
         # using teacher forcing
-        # print('predicts is ', predicts)
         dec_input = tf.expand_dims(predicted_ids, 1)
-        # dec_input = predicted_ids
-        # print('dec_input is ', dec_input)
 
     results = []
     for predict in predicts:

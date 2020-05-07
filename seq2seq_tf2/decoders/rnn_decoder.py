@@ -22,15 +22,11 @@ class BahdanauAttention(tf.keras.layers.Layer):
         # we are doing this to perform addition to calculate the score
         hidden_with_time_axis = tf.expand_dims(dec_hidden, 1)  # shape=(16, 1, 256)
         # att_features = self.W1(enc_output) + self.W2(hidden_with_time_axis)
-        # print('hidden_with_time_axis is ', hidden_with_time_axis)
 
         # Calculate v^T tanh(W_h h_i + W_s s_t + b_attn)
-        # print('enc_output is ', hidden_with_time_axis)
         score = self.V(tf.nn.tanh(self.W1(enc_output) + self.W2(hidden_with_time_axis)))  # shape=(16, 200, 1)
         # Calculate attention distribution
-        # print('score is ', score)
         attn_dist = tf.nn.softmax(score, axis=1)  # shape=(16, 200, 1)
-        # print('attn_dist is ', attn_dist)
 
         # context_vector shape after sum == (batch_size, hidden_size)
         context_vector = attn_dist * enc_output  # shape=(16, 200, 256)
@@ -52,12 +48,10 @@ class Decoder(tf.keras.layers.Layer):
                                        return_state=True,
                                        recurrent_initializer='glorot_uniform')
         # self.dropout = tf.keras.layers.Dropout(0.5)
-        # self.fc = tf.keras.layers.Dense(vocab_size, activation=tf.keras.activations.softmax)
-        self.fc = tf.keras.layers.Dense(vocab_size)
+        self.fc = tf.keras.layers.Dense(vocab_size, activation=tf.keras.activations.softmax)
+        # self.fc = tf.keras.layers.Dense(vocab_size)
 
     def call(self, x, hidden, enc_output, context_vector):
-        # def call(self, x, context_vector):
-
         # enc_output shape == (batch_size, max_length, hidden_size)
 
         # x shape after passing through embedding == (batch_size, 1, embedding_dim)
@@ -71,7 +65,6 @@ class Decoder(tf.keras.layers.Layer):
         # output shape == (batch_size * 1, hidden_size)
         output = tf.reshape(output, (-1, output.shape[2]))
 
-        # output shape == (batch_size, vocab)
         # output = self.dropout(output)
         out = self.fc(output)
 
