@@ -32,47 +32,15 @@ class PGN(tf.keras.Model):
     def call(self, enc_output, dec_hidden, enc_inp,
              enc_extended_inp, dec_inp, batch_oov_len,
              enc_padding_mask, use_coverage, prev_coverage):
-        # if self.params["mode"] == "test":
-        #     outputs = self._dynamic_decode(self,
-        #                                    enc_output,
-        #                                    dec_hidden,
-        #                                    enc_inp,
-        #                                    enc_extended_inp,
-        #                                    dec_inp,
-        #                                    batch_oov_len,
-        #                                    enc_padding_mask,
-        #                                    use_coverage,
-        #                                    prev_coverage)
-
-        if self.params["mode"] == "train":
-            outputs = self._decode_target(enc_output,
-                                          dec_hidden,
-                                          enc_extended_inp,
-                                          dec_inp,
-                                          batch_oov_len,
-                                          enc_padding_mask,
-                                          use_coverage,
-                                          prev_coverage)
-            return outputs
-    
-    def _decode_target(self,
-                       enc_output,
-                       dec_hidden,
-                       enc_extended_inp,
-                       dec_inp,
-                       batch_oov_len,
-                       enc_padding_mask,
-                       use_coverage,
-                       prev_coverage):
+        predictions = []
+        attentions = []
+        coverages = []
+        p_gens = []
         context_vector, attn_dist, coverage_next = self.attention(dec_hidden,  # shape=(16, 256)
                                                                   enc_output,  # shape=(16, 200, 256)
                                                                   enc_padding_mask,  # (16, 200)
                                                                   use_coverage,
                                                                   prev_coverage)  # None
-        predictions = []
-        attentions = []
-        coverages = []
-        p_gens = []
         for t in range(dec_inp.shape[1]):
             # Teachering Forcing
             dec_x, pred, dec_hidden = self.decoder(tf.expand_dims(dec_inp[:, t], 1),
@@ -89,7 +57,7 @@ class PGN(tf.keras.Model):
             coverages.append(coverage_next)
             attentions.append(attn_dist)
             p_gens.append(p_gen)
-            
+        
         final_dists = decoding.calc_final_dist(enc_extended_inp,
                                                 predictions,
                                                 attentions,
@@ -97,38 +65,14 @@ class PGN(tf.keras.Model):
                                                 batch_oov_len,
                                                 self.params["vocab_size"],
                                                 self.params["batch_size"])
+        # outputs = dict(logits=tf.stack(final_dists, 1), dec_hidden=dec_hidden, attentions=attentions, coverages=coverages)
+        if self.params['mode'] == "train":
+            outputs = dict(logits=final_dists, dec_hidden=dec_hidden, attentions=attentions, coverages=coverages, p_gens=p_gens)
+        else:
+            outputs = dict(logits=tf.stack(final_dists, 1),
+                           dec_hidden=dec_hidden,
+                           attentions=tf.stack(attentions, 1),
+                           coverages=tf.stack(coverages, 1),
+                           p_gens=tf.stack(p_gens, 1))
         
-        outputs = dict(logits=tf.stack(final_dists, 1), dec_hidden=dec_hidden, attentions=attentions, coverages=coverages)
         return outputs
-    
-    # def _dynamic_decode(self,
-    #                    enc_output,
-    #                    dec_hidden,
-    #                    enc_inp,
-    #                    enc_extended_inp,
-    #                    dec_inp,
-    #                    batch_oov_len,
-    #                    enc_padding_mask,
-    #                    use_coverage,
-    #                    prev_coverage):
-    #     context_vector, attn_dist, coverage_next = self.attention(dec_hidden,  # shape=(16, 256)
-    #                                                               enc_output,  # shape=(16, 200, 256)
-    #                                                               enc_padding_mask,  # (16, 200)
-    #                                                               use_coverage,
-    #                                                               prev_coverage)  # None
-    #     dec_x, pred, dec_hidden = self.decoder(dec_inp,
-    #                                            dec_hidden,
-    #                                            enc_output,
-    #                                            context_vector)
-    #     if self.params["pointer_gen"]:
-    #         p_gen = self.pointer(context_vector, dec_hidden, tf.squeeze(dec_x, axis=1))
-    #         final_dists = _calc_final_dist(enc_extended_inp,
-    #                                            [pred],
-    #                                            [attn_dist],
-    #                                            [p_gen],
-    #                                            batch_oov_len,
-    #                                            self.params["vocab_size"],
-    #                                            self.params["batch_size"])
-    #         outputs = dict(logits=tf.stack(final_dists, 1), dec_hidden=dec_hidden, attentions=attentions, p_gen=p_gen)
-    #         return outputs
-

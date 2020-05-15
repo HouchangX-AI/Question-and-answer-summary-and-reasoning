@@ -10,7 +10,7 @@ class Encoder(tf.keras.layers.Layer):
         self.embedding = tf.keras.layers.Embedding(vocab_size,
                                                    embedding_dim,
                                                    weights=[embedding_matrix],
-                                                   trainable=True)
+                                                   trainable=False)
         # tf.keras.layers.GRU自动匹配cpu、gpu
         self.gru = tf.keras.layers.GRU(self.enc_units,
                                        return_sequences=True,

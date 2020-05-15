@@ -157,7 +157,7 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
         dataset_train_x = tf.data.TextLineDataset(train_x_path)
         dataset_train_y = tf.data.TextLineDataset(train_y_path)
         train_dataset = tf.data.Dataset.zip((dataset_train_x, dataset_train_y))
-        train_dataset = train_dataset.shuffle(16, reshuffle_each_iteration=True).repeat()
+        # train_dataset = train_dataset.shuffle(16, reshuffle_each_iteration=True).repeat()
         # i = 0
         for raw_record in train_dataset:
             article = raw_record[0].numpy().decode("utf-8")
@@ -169,9 +169,7 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
             article_words = article.split()[:max_enc_len]
             enc_len = len(article_words)
             # 添加mark标记
-            # print('enc_len is', enc_len)
             sample_encoder_pad_mask = [1 for _ in range(enc_len)]
-            # print('sample_encoder_pad_mask is', sample_encoder_pad_mask)
 
             enc_input = [vocab.word_to_id(w) for w in article_words]
             enc_input_extend_vocab, article_oovs = article_to_ids(article_words, vocab)
@@ -185,9 +183,7 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
 
             dec_len = len(dec_input)
             # 添加mark标记
-            # print('dec_len ids ', dec_len)
             sample_decoder_pad_mask = [1 for _ in range(dec_len)]
-            # print('sample_decoder_pad_mask is ', sample_decoder_pad_mask)
 
             output = {
                 "enc_len": enc_len,
@@ -208,7 +204,6 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
     if mode == "test":
         test_dataset = tf.data.TextLineDataset(test_x_path)
         for raw_record in test_dataset:
-            # print('raw_record', raw_record)
             article = raw_record.numpy().decode("utf-8")
             article_words = article.split()[:max_enc_len]
             enc_len = len(article_words)
@@ -232,7 +227,6 @@ def example_generator(vocab, train_x_path, train_y_path, test_x_path, max_enc_le
                 "sample_decoder_pad_mask": [],
                 "sample_encoder_pad_mask": sample_encoder_pad_mask,
             }
-            # print('output is ', output)
             for _ in range(batch_size):
                 yield output
 
