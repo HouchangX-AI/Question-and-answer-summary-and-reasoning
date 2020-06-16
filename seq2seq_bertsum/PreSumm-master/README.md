@@ -1,6 +1,4 @@
-# PreSumm
-
-**This code is for EMNLP 2019 paper [Text Summarization with Pretrained Encoders](https://arxiv.org/abs/1908.08345) on own data**
+**This code is for EMNLP 2019 paper [Text Summarization with Pretrained Encoders](https://arxiv.org/abs/1908.08345) on our own data**
 
 ### process the data yourself
 
