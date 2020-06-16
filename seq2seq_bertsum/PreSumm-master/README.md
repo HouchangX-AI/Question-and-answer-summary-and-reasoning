@@ -1,5 +1,7 @@
 **This code is for EMNLP 2019 paper [Text Summarization with Pretrained Encoders](https://arxiv.org/abs/1908.08345) on our own data**
 
+![](https://img.shields.io/badge/python-v3.7-blue) 
+![](https://img.shields.io/badge/pytorch-1.1.0-blue)
 ### process the data yourself
 
 ####  Step 1. Format to Simpler Json Files
